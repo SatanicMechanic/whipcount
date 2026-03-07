@@ -1,0 +1,3 @@
+# disclaimer
+
+The author has zero background in data science, python, or anything else.  This may all be hallucinatory AI slop.  Enter at your own risk.
