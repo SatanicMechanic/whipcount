@@ -103,12 +103,12 @@ votes_merged = votes_all.merge(party_positions, on=["chamber", "rollnumber"], ho
 # ── Label ──────────────────────────────────────────────────────────────────────
 def independence_label(score_pct):
     s = round(score_pct, 2)
-    if s < 1.0:  return "Spineless Sycophant"
-    if s < 5.0:  return "Party Loyalist"
-    if s < 10.0: return "Occasional Dissenter"
+    if s < 1.0:  return "Mindless Drone"
+    if s < 5.0:  return "Yes Man"
+    if s < 10.0: return "Reluctant Rebel"
     if s < 20.0: return "Frequent Dissenter"
-    if s < 30.0: return "Maverick"
-    return "Independent Thinker"
+    if s < 30.0: return "Rebellious Streak"
+    return "Lone Wolf"
 
 # ── Score each member ──────────────────────────────────────────────────────────
 records = []
@@ -170,8 +170,8 @@ def group_stats(subset):
         "max_independence": round(max(scores), 2),
         "label_dist": {
             label: sum(1 for r in subset if r["independence_label"] == label)
-            for label in ["Spineless Sycophant","Party Loyalist","Occasional Dissenter",
-                          "Frequent Dissenter","Maverick","Independent Thinker"]
+            for label in ["Mindless Drone","Yes Man","Reluctant Rebel",
+                          "Frequent Dissenter","Rebellious Streak","Lone Wolf"]
         }
     }
 
