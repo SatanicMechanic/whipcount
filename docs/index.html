@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mavericks & Sycophants · Congress Independence Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0c0c0f;
+    --surface:   #13131a;
+    --border:    #1e1e2e;
+    --text:      #e2e2e8;
+    --muted:     #6b6b80;
+    --dem:       #4a9eff;
+    --rep:       #ff5f5f;
+    --ind:       #a78bfa;
+    --accent:    #f0c040;
+
+    --s0: #ff3b3b;
+    --s1: #ff7a30;
+    --s2: #ffb020;
+    --s3: #c8e000;
+    --s4: #60d480;
+    --s5: #30e8c0;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Grid background ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Header ── */
+  header {
+    position: relative;
+    z-index: 1;
+    padding: 3rem 2rem 2rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(240,192,64,.06) 0%, transparent 100%);
+  }
+
+  .header-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: .5rem;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 8vw, 6rem);
+    line-height: .95;
+    letter-spacing: .02em;
+    color: #fff;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    margin-top: .75rem;
+    color: var(--muted);
+    font-size: .95rem;
+    max-width: 600px;
+    line-height: 1.6;
+  }
+
+  .updated {
+    margin-top: 1rem;
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    color: var(--muted);
+    letter-spacing: .1em;
+  }
+
+  /* ── Summary cards ── */
+  .summary {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 2.5rem auto;
+    padding: 0 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+
+  .card:hover { border-color: var(--accent); }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .card.dem::before  { background: var(--dem); }
+  .card.rep::before  { background: var(--rep); }
+  .card.all::before  { background: var(--accent); }
+
+  .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: .75rem;
+  }
+
+  .card-count {
+    font-size: .72rem;
+    color: var(--muted);
+    float: right;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Stacked bar */
+  .dist-bar {
+    display: flex;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: .85rem;
+    gap: 1px;
+  }
+
+  .dist-bar-seg { transition: flex .4s; }
+
+  /* Label rows */
+  .dist-rows { display: flex; flex-direction: column; gap: .3rem; }
+
+  .dist-row {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .72rem;
+  }
+
+  .dist-row-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .dist-row-name {
+    flex: 1;
+    color: #b0b0c0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dist-row-val {
+    font-family: 'DM Mono', monospace;
+    font-size: .68rem;
+    color: var(--muted);
+    min-width: 28px;
+    text-align: right;
+  }
+
+  /* ── Label legend ── */
+  .legend {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto 2rem;
+    padding: 0 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    align-items: center;
+  }
+
+  .legend-title {
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-right: .5rem;
+  }
+
+  .badge {
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem;
+    padding: .25rem .6rem;
+    border-radius: 2px;
+    font-weight: 500;
+    letter-spacing: .05em;
+    white-space: nowrap;
+  }
+
+  /* ── Controls ── */
+  .controls {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto 1.5rem;
+    padding: 0 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    align-items: center;
+  }
+
+  .search-wrap {
+    flex: 1;
+    min-width: 200px;
+    max-width: 340px;
+    position: relative;
+  }
+
+  .search-wrap svg {
+    position: absolute;
+    left: .75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  input[type=search], select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .85rem;
+    padding: .55rem .75rem;
+    outline: none;
+    transition: border-color .2s;
+  }
+
+  input[type=search] {
+    width: 100%;
+    padding-left: 2.2rem;
+  }
+
+  input[type=search]:focus, select:focus { border-color: var(--accent); }
+
+  select {
+    cursor: pointer;
+    appearance: none;
+    padding-right: 2rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6b80' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right .6rem center;
+  }
+
+  .count-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  /* ── Table ── */
+  .table-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto 4rem;
+    padding: 0 2rem;
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .82rem;
+  }
+
+  thead th {
+    font-family: 'DM Mono', monospace;
+    font-size: .62rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: .6rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  thead th:hover { color: var(--text); }
+  thead th.sorted { color: var(--accent); }
+
+  thead th .sort-arrow { margin-left: .3rem; opacity: .5; }
+  thead th.sorted .sort-arrow { opacity: 1; }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    transition: background .1s;
+  }
+
+  tbody tr:hover { background: rgba(255,255,255,.03); }
+
+  td {
+    padding: .65rem 1rem;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .td-name {
+    font-weight: 500;
+    color: #fff;
+    white-space: normal;
+    min-width: 180px;
+  }
+
+  .party-pill {
+    display: inline-block;
+    width: 1.6rem;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem;
+    font-weight: 500;
+    padding: .15rem 0;
+    border-radius: 2px;
+  }
+
+  .party-D { background: rgba(74,158,255,.15); color: var(--dem); }
+  .party-R { background: rgba(255,95,95,.15);  color: var(--rep); }
+  .party-I { background: rgba(167,139,250,.15);color: var(--ind); }
+
+  .score-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    min-width: 140px;
+  }
+
+  .score-bar {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,.07);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .score-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width .3s;
+  }
+
+  .score-num {
+    font-family: 'DM Mono', monospace;
+    font-size: .72rem;
+    min-width: 38px;
+    text-align: right;
+  }
+
+  .td-muted {
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: .72rem;
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 4rem 1rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: .8rem;
+    letter-spacing: .1em;
+  }
+
+  /* ── Loading ── */
+  #loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .spinner {
+    width: 36px; height: 36px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #app { display: none; }
+
+  /* ── Footer ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 2rem;
+    border-top: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem;
+    color: var(--muted);
+    letter-spacing: .1em;
+  }
+
+  footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ── Intro ── */
+  .intro {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  @media (max-width: 800px) { .intro { grid-template-columns: 1fr; } }
+
+  .intro-block h2 {
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: .85rem;
+  }
+
+  .intro-block p {
+    font-size: .9rem;
+    line-height: 1.75;
+    color: #b0b0c0;
+    margin-bottom: .85rem;
+  }
+
+  .intro-block p:last-child { margin-bottom: 0; }
+
+  .intro-block a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(240,192,64,.4);
+  }
+
+  .intro-block a:hover { text-decoration-color: var(--accent); }
+
+  .method-list {
+    list-style: none;
+    margin-top: .5rem;
+  }
+
+  .method-list li {
+    font-size: .85rem;
+    line-height: 1.6;
+    color: #b0b0c0;
+    padding: .5rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: .75rem;
+  }
+
+  .method-list li:last-child { border-bottom: none; }
+
+  .method-list .term {
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    color: var(--accent);
+    min-width: 130px;
+    padding-top: .1rem;
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <div style="font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.15em;color:var(--muted)">LOADING DATA</div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="header-inner">
+      <h1>Mavericks <span>&</span> Sycophants</h1>
+      <div class="updated" id="updated-at"></div>
+    </div>
+  </header>
+
+  <div class="intro">
+    <div class="intro-block">
+      <h2>Welcome</h2>
+      <p>Most congressional scorecards measure how often a member votes with their party
+      when the two parties disagree. That's useful, but it misses half the picture. When
+      both party leaderships agree, those votes are typically invisible to standard
+      analyses. The consensus deviation score captures how often a member breaks from
+      bipartisan agreement — the moments when the Borg collectively wants a Yea, and
+      someone votes No anyway. That dissent is factored into the overall Independence
+      score.</p>
+      <p>This site tracks how often members of Congress vote as part of the two-headed
+      <a href="https://grokipedia.com/page/Borg" target="_blank" rel="noopener">Borg</a>.
+      Deviation is applauded in this framing, serving as an indicator of those voting
+      their conscience rather than buckling to the
+      <a href="https://grokipedia.com/page/Whip_(politics)" target="_blank" rel="noopener">whip</a>.</p>
+      <p>Unlike other scorecards that use ostensibly positive labels such as
+      "Party Loyalty" or "Ideological Alignment", we lean hard the other way and give a
+      shout out to those who buck the trend.</p>
+      <p>If you're the type of person who thinks their party can do no wrong and always
+      votes a straight ticket for the GOP or DNC, you might still find it useful as a
+      straight loyalty tracker.</p>
+    </div>
+    <div class="intro-block">
+      <h2>Methodology</h2>
+      <ul class="method-list">
+        <li>
+          <span class="term">What's counted</span>
+          <span>Recorded Yea and Nay votes cast by each member during the current Congress. Only votes where the member was present and voted decisively are included.</span>
+        </li>
+        <li>
+          <span class="term">What's omitted</span>
+          <span>Abstentions, missed votes, paired votes, and procedural announced positions. A member's score reflects only how they voted when they voted.</span>
+        </li>
+        <li>
+          <span class="term">Partisan deviation</span>
+          <span>On votes where a majority of Democrats opposed a majority of Republicans, how often did the member vote against their own party's majority?</span>
+        </li>
+        <li>
+          <span class="term">Consensus deviation</span>
+          <span>On votes where both party majorities agreed, how often did the member break from that bipartisan consensus?</span>
+        </li>
+        <li>
+          <span class="term">Independence score</span>
+          <span>The average of partisan deviation and consensus deviation, expressed as a percentage. Higher = more independent from leadership.</span>
+        </li>
+        <li>
+          <span class="term">Independents</span>
+          <span>Members displayed as Independent are scored against the caucus they align with in Congress.</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="summary" id="summary-cards"></div>
+
+  <div class="legend">
+    <span class="legend-title">Scale</span>
+    <span class="badge" style="background:rgba(255,59,59,.15);color:var(--s0)">&lt;1% Rubber Stamper</span>
+    <span class="badge" style="background:rgba(255,122,48,.15);color:var(--s1)">1–5% Yes Man</span>
+    <span class="badge" style="background:rgba(255,176,32,.15);color:var(--s2)">5–10% Reluctant Rebel</span>
+    <span class="badge" style="background:rgba(200,224,0,.15);color:var(--s3)">10–20% Frequent Dissenter</span>
+    <span class="badge" style="background:rgba(96,212,128,.15);color:var(--s4)">20–30% Rebellious Streak</span>
+    <span class="badge" style="background:rgba(48,232,192,.15);color:var(--s5)">30%+ Lone Wolf</span>
+  </div>
+
+  <div class="controls">
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="search" id="search" placeholder="Search by name or state…">
+    </div>
+    <select id="filter-chamber">
+      <option value="">All chambers</option>
+      <option value="House">House</option>
+      <option value="Senate">Senate</option>
+    </select>
+    <select id="filter-party">
+      <option value="">All parties</option>
+      <option value="D">Democrat</option>
+      <option value="R">Republican</option>
+      <option value="I">Independent</option>
+    </select>
+    <select id="filter-label">
+      <option value="">All labels</option>
+      <option>Rubber Stamper</option>
+      <option>Yes Man</option>
+      <option>Reluctant Rebel</option>
+      <option>Frequent Dissenter</option>
+      <option>Rebellious Streak</option>
+      <option>Lone Wolf</option>
+    </select>
+    <span class="count-pill" id="count-pill"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table id="main-table">
+      <thead>
+        <tr>
+          <th data-col="name">Name <span class="sort-arrow">↕</span></th>
+          <th data-col="party">Party <span class="sort-arrow">↕</span></th>
+          <th data-col="state">State <span class="sort-arrow">↕</span></th>
+          <th data-col="chamber">Chamber <span class="sort-arrow">↕</span></th>
+          <th data-col="independence_score" class="sorted">Independence Score <span class="sort-arrow">↓</span></th>
+          <th data-col="independence_label">Label <span class="sort-arrow">↕</span></th>
+          <th data-col="party_unity_pct">Party Unity <span class="sort-arrow">↕</span></th>
+          <th data-col="consensus_deviation_pct">Consensus Dev. <span class="sort-arrow">↕</span></th>
+          <th data-col="partisan_votes">Partisan Votes <span class="sort-arrow">↕</span></th>
+          <th data-col="consensus_votes">Consensus Votes <span class="sort-arrow">↕</span></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<footer>
+  Data: <a href="https://voteview.com" target="_blank">Voteview.com</a> —
+  Lewis, Poole, Rosenthal, Boche, Rudkin &amp; Sonnet (2024), <em>Voteview: Congressional Votes and Ideology</em> ·
+  Built with GitHub Actions + Pages
+</footer>
+
+<script>
+const LABEL_COLORS = {
+  "Rubber Stamper":   "var(--s0)",
+  "Yes Man":        "var(--s1)",
+  "Reluctant Rebel":  "var(--s2)",
+  "Frequent Dissenter":    "var(--s3)",
+  "Rebellious Streak":              "var(--s4)",
+  "Lone Wolf":   "var(--s5)",
+};
+
+const LABEL_BG = {
+  "Rubber Stamper":   "rgba(255,59,59,.12)",
+  "Yes Man":        "rgba(255,122,48,.12)",
+  "Reluctant Rebel":  "rgba(255,176,32,.12)",
+  "Frequent Dissenter":    "rgba(200,224,0,.12)",
+  "Rebellious Streak":              "rgba(96,212,128,.12)",
+  "Lone Wolf":   "rgba(48,232,192,.12)",
+};
+
+let allMembers = [];
+let sortCol = "independence_score";
+let sortDir = -1; // -1 = desc
+
+function pct(v) {
+  if (v == null) return "—";
+  return v.toFixed(1) + "%";
+}
+
+function scoreColor(score) {
+  if (score == null) return "var(--muted)";
+  if (score < 1)  return "var(--s0)";
+  if (score < 5)  return "var(--s1)";
+  if (score < 10) return "var(--s2)";
+  if (score < 20) return "var(--s3)";
+  if (score < 30) return "var(--s4)";
+  return "var(--s5)";
+}
+
+const LABELS = [
+  "Rubber Stamper",
+  "Yes Man",
+  "Reluctant Rebel",
+  "Frequent Dissenter",
+  "Rebellious Streak",
+  "Lone Wolf",
+];
+
+const LABEL_RAW_COLORS = [
+  "#ff3b3b","#ff7a30","#ffb020","#c8e000","#60d480","#30e8c0"
+];
+
+function renderSummaryCards(summary) {
+  const cards = [
+    { key: "all",        label: "All Members",  cls: "all" },
+    { key: "house_dem",  label: "House · Dem",  cls: "dem" },
+    { key: "house_rep",  label: "House · Rep",  cls: "rep" },
+    { key: "senate_dem", label: "Senate · Dem", cls: "dem" },
+    { key: "senate_rep", label: "Senate · Rep", cls: "rep" },
+  ];
+
+  const container = document.getElementById("summary-cards");
+  container.innerHTML = cards.map(c => {
+    const s = summary[c.key];
+    const total = s.count;
+
+    const barSegs = LABELS.map((lbl, i) => {
+      const count = s.label_dist[lbl] || 0;
+      const pct = (count / total * 100).toFixed(1);
+      return `<div class="dist-bar-seg" title="${lbl}: ${count}" style="flex:${count};background:${LABEL_RAW_COLORS[i]}"></div>`;
+    }).join("");
+
+    const rows = LABELS.map((lbl, i) => {
+      const count = s.label_dist[lbl] || 0;
+      const pct = (count / total * 100).toFixed(0);
+      return `
+        <div class="dist-row">
+          <div class="dist-row-dot" style="background:${LABEL_RAW_COLORS[i]}"></div>
+          <div class="dist-row-name">${lbl}</div>
+          <div class="dist-row-val">${count}</div>
+        </div>`;
+    }).join("");
+
+    return `
+    <div class="card ${c.cls}">
+      <div class="card-label">${c.label} <span class="card-count">${total} members</span></div>
+      <div class="dist-bar">${barSegs}</div>
+      <div class="dist-rows">${rows}</div>
+    </div>`;
+  }).join("");
+}
+
+function filteredMembers() {
+  const q      = document.getElementById("search").value.toLowerCase();
+  const chamber = document.getElementById("filter-chamber").value;
+  const party   = document.getElementById("filter-party").value;
+  const label   = document.getElementById("filter-label").value;
+
+  return allMembers.filter(m => {
+    if (q && !m.name.toLowerCase().includes(q) && !(m.state||"").toLowerCase().includes(q)) return false;
+    if (chamber && m.chamber !== chamber) return false;
+    if (party  && m.party   !== party)   return false;
+    if (label  && m.independence_label !== label) return false;
+    return true;
+  }).sort((a, b) => {
+    let av = a[sortCol], bv = b[sortCol];
+    if (av == null) av = sortDir === 1 ? Infinity : -Infinity;
+    if (bv == null) bv = sortDir === 1 ? Infinity : -Infinity;
+    if (typeof av === "string") return sortDir * av.localeCompare(bv);
+    return sortDir * (bv - av);
+  });
+}
+
+const MAX_SCORE = 50; // clamp bar at 50% for visual clarity
+
+function renderTable() {
+  const rows = filteredMembers();
+  document.getElementById("count-pill").textContent = `${rows.length} members`;
+
+  const tbody = document.getElementById("tbody");
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="no-results">NO RESULTS</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(m => {
+    const barPct = Math.min(100, ((m.independence_score || 0) / MAX_SCORE) * 100);
+    const col    = scoreColor(m.independence_score);
+    const lbl    = m.independence_label || "—";
+
+    return `<tr>
+      <td class="td-name">${m.name}</td>
+      <td><span class="party-pill party-${m.party}">${m.party}</span></td>
+      <td class="td-muted">${m.state || "—"}</td>
+      <td class="td-muted">${m.chamber}</td>
+      <td>
+        <div class="score-bar-wrap">
+          <div class="score-bar"><div class="score-fill" style="width:${barPct}%;background:${col}"></div></div>
+          <span class="score-num" style="color:${col}">${pct(m.independence_score)}</span>
+        </div>
+      </td>
+      <td><span class="badge" style="background:${LABEL_BG[lbl]};color:${LABEL_COLORS[lbl]}">${lbl}</span></td>
+      <td class="td-muted">${pct(m.party_unity_pct)}</td>
+      <td class="td-muted">${pct(m.consensus_deviation_pct)}</td>
+      <td class="td-muted">${m.partisan_votes ?? "—"}</td>
+      <td class="td-muted">${m.consensus_votes ?? "—"}</td>
+    </tr>`;
+  }).join("");
+}
+
+function updateSortHeaders() {
+  document.querySelectorAll("thead th").forEach(th => {
+    const col = th.dataset.col;
+    th.classList.toggle("sorted", col === sortCol);
+    const arrow = th.querySelector(".sort-arrow");
+    if (col === sortCol) arrow.textContent = sortDir === -1 ? "↓" : "↑";
+    else arrow.textContent = "↕";
+  });
+}
+
+async function init() {
+  const res  = await fetch("data.json");
+  const data = await res.json();
+
+  allMembers = data.members;
+
+  document.getElementById("updated-at").textContent =
+    `${data.congress}th Congress · Last updated: ` + new Date(data.updated_at).toLocaleDateString("en-US", {
+      year: "numeric", month: "long", day: "numeric"
+    });
+
+  renderSummaryCards(data.summary);
+  renderTable();
+
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("app").style.display     = "block";
+
+  // Controls
+  ["search","filter-chamber","filter-party","filter-label"].forEach(id =>
+    document.getElementById(id).addEventListener("input", renderTable)
+  );
+
+  // Sort
+  document.querySelectorAll("thead th[data-col]").forEach(th => {
+    th.addEventListener("click", () => {
+      const col = th.dataset.col;
+      if (col === sortCol) sortDir *= -1;
+      else { sortCol = col; sortDir = col === "name" || col === "state" || col === "chamber" ? 1 : -1; }
+      updateSortHeaders();
+      renderTable();
+    });
+  });
+}
+
+init().catch(err => {
+  document.getElementById("loading").innerHTML =
+    `<div style="color:var(--rep);font-family:'DM Mono',monospace;font-size:.8rem">Failed to load data.json</div>`;
+  console.error(err);
+});
+</script>
+</body>
+</html>
