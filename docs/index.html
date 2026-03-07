@@ -299,6 +299,11 @@
     overflow-x: auto;
   }
 
+  .table-scroll {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
   table {
     width: 100%;
     border-collapse: collapse;
@@ -564,7 +569,7 @@
         </li>
         <li>
           <span class="term">Partisan deviation</span>
-          <span>On votes where a majority of Democrats opposed a majority of Republicans, how often did the member vote against their own party's majority?</span>
+          <span>On votes where the two parties split, how often did the member vote against their own party's majority?</span>
         </li>
         <li>
           <span class="term">Consensus deviation</span>
@@ -623,6 +628,7 @@
   </div>
 
   <div class="table-wrap">
+    <div class="table-scroll">
     <table id="main-table">
       <thead>
         <tr>
@@ -640,6 +646,7 @@
       </thead>
       <tbody id="tbody"></tbody>
     </table>
+    </div>
   </div>
 </div>
 
