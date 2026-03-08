@@ -121,6 +121,9 @@ for icpsr, grp in votes_merged.groupby("icpsr"):
     disp  = mrow["display_party"]
     if party not in ("D", "R"): continue
 
+    n_total = len(grp)
+    if n_total < 30: continue  # exclude members with fewer than 30 recorded votes
+
     pp_col = f"{party}_pos"
 
     partisan  = grp[grp["vote_type"] == "partisan"]
