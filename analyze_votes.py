@@ -37,10 +37,35 @@ FILES = {
 
 # ── Download ───────────────────────────────────────────────────────────────────
 def download(url, dest):
-    print(f"Downloading {url}")
-    r = requests.get(url, timeout=60)
+    """Download url to dest only if the remote file has changed since last download."""
+    headers = {}
+    if dest.exists():
+        # Send cached ETag/Last-Modified so server can respond 304 Not Modified
+        meta_file = dest.with_suffix(".meta")
+        if meta_file.exists():
+            meta = json.loads(meta_file.read_text())
+            if "etag" in meta:
+                headers["If-None-Match"] = meta["etag"]
+            if "last_modified" in meta:
+                headers["If-Modified-Since"] = meta["last_modified"]
+
+    r = requests.get(url, headers=headers, timeout=60)
+
+    if r.status_code == 304:
+        print(f"Unchanged (304): {url}")
+        return
+
     r.raise_for_status()
     dest.write_bytes(r.content)
+
+    # Cache ETag and Last-Modified for next run
+    meta = {}
+    if "ETag" in r.headers:
+        meta["etag"] = r.headers["ETag"]
+    if "Last-Modified" in r.headers:
+        meta["last_modified"] = r.headers["Last-Modified"]
+    dest.with_suffix(".meta").write_text(json.dumps(meta))
+    print(f"Downloaded: {url}")
 
 for key, url in FILES.items():
     dest = DATA_DIR / Path(url).name
