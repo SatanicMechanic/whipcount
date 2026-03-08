@@ -1,14 +1,14 @@
 {
-  "updated_at": "2026-03-07T22:10:52Z",
+  "updated_at": "2026-03-08T19:54:40Z",
   "congress": 119,
   "summary": {
     "all": {
-      "count": 547,
-      "avg_independence": 5.34,
+      "count": 542,
+      "avg_independence": 5.39,
       "min_independence": 0.0,
       "max_independence": 38.2,
       "label_dist": {
-        "Mindless Drone": 38,
+        "Mindless Drone": 33,
         "Yes Man": 344,
         "Reluctant Rebel": 90,
         "Frequent Dissenter": 49,
@@ -17,12 +17,12 @@
       }
     },
     "house": {
-      "count": 445,
-      "avg_independence": 4.48,
+      "count": 442,
+      "avg_independence": 4.51,
       "min_independence": 0.0,
       "max_independence": 30.82,
       "label_dist": {
-        "Mindless Drone": 31,
+        "Mindless Drone": 28,
         "Yes Man": 310,
         "Reluctant Rebel": 58,
         "Frequent Dissenter": 34,
@@ -31,12 +31,12 @@
       }
     },
     "senate": {
-      "count": 102,
-      "avg_independence": 9.1,
-      "min_independence": 0.0,
+      "count": 100,
+      "avg_independence": 9.28,
+      "min_independence": 0.16,
       "max_independence": 38.2,
       "label_dist": {
-        "Mindless Drone": 7,
+        "Mindless Drone": 5,
         "Yes Man": 34,
         "Reluctant Rebel": 32,
         "Frequent Dissenter": 15,
@@ -45,12 +45,12 @@
       }
     },
     "house_dem": {
-      "count": 220,
-      "avg_independence": 3.4,
+      "count": 219,
+      "avg_independence": 3.42,
       "min_independence": 0.0,
       "max_independence": 16.78,
       "label_dist": {
-        "Mindless Drone": 18,
+        "Mindless Drone": 17,
         "Yes Man": 168,
         "Reluctant Rebel": 27,
         "Frequent Dissenter": 7,
@@ -59,12 +59,12 @@
       }
     },
     "house_rep": {
-      "count": 225,
-      "avg_independence": 5.53,
+      "count": 223,
+      "avg_independence": 5.58,
       "min_independence": 0.0,
       "max_independence": 30.82,
       "label_dist": {
-        "Mindless Drone": 13,
+        "Mindless Drone": 11,
         "Yes Man": 142,
         "Reluctant Rebel": 31,
         "Frequent Dissenter": 27,
@@ -87,12 +87,12 @@
       }
     },
     "senate_rep": {
-      "count": 55,
-      "avg_independence": 4.53,
-      "min_independence": 0.0,
+      "count": 53,
+      "avg_independence": 4.7,
+      "min_independence": 0.16,
       "max_independence": 30.59,
       "label_dist": {
-        "Mindless Drone": 7,
+        "Mindless Drone": 5,
         "Yes Man": 33,
         "Reluctant Rebel": 9,
         "Frequent Dissenter": 5,
@@ -1316,21 +1316,6 @@
       "consensus_loyalty_pct": 84.62,
       "consensus_deviation_pct": 15.38,
       "consensus_votes": 26
-    },
-    {
-      "name": "GRIJALVA, Ra\u00fal M.",
-      "party": "D",
-      "caucus": "D",
-      "state": "AZ",
-      "chamber": "House",
-      "district": 7,
-      "independence_score": 0.0,
-      "independence_label": "Mindless Drone",
-      "party_unity_pct": 100.0,
-      "partisan_votes": 1,
-      "consensus_loyalty_pct": null,
-      "consensus_deviation_pct": null,
-      "consensus_votes": 0
     },
     {
       "name": "HARDER, Josh",
@@ -5983,21 +5968,6 @@
       "consensus_votes": 114
     },
     {
-      "name": "RADEWAGEN, Aumua Amata Coleman",
-      "party": "R",
-      "caucus": "R",
-      "state": "AS",
-      "chamber": "House",
-      "district": 0,
-      "independence_score": 0.0,
-      "independence_label": "Mindless Drone",
-      "party_unity_pct": 100.0,
-      "partisan_votes": 12,
-      "consensus_loyalty_pct": 100.0,
-      "consensus_deviation_pct": 0.0,
-      "consensus_votes": 3
-    },
-    {
       "name": "RESCHENTHALER, Guy",
       "party": "R",
       "caucus": "R",
@@ -6611,21 +6581,6 @@
       "consensus_loyalty_pct": 99.15,
       "consensus_deviation_pct": 0.85,
       "consensus_votes": 118
-    },
-    {
-      "name": "WALTZ, Michael",
-      "party": "R",
-      "caucus": "R",
-      "state": "FL",
-      "chamber": "House",
-      "district": 6,
-      "independence_score": 0.0,
-      "independence_label": "Mindless Drone",
-      "party_unity_pct": 100.0,
-      "partisan_votes": 6,
-      "consensus_loyalty_pct": 100.0,
-      "consensus_deviation_pct": 0.0,
-      "consensus_votes": 1
     },
     {
       "name": "WEBER, Randy",
@@ -8128,21 +8083,6 @@
       "consensus_votes": 46
     },
     {
-      "name": "RUBIO, Marco",
-      "party": "R",
-      "caucus": "R",
-      "state": "FL",
-      "chamber": "Senate",
-      "district": null,
-      "independence_score": 0.0,
-      "independence_label": "Mindless Drone",
-      "party_unity_pct": 100.0,
-      "partisan_votes": 5,
-      "consensus_loyalty_pct": 100.0,
-      "consensus_deviation_pct": 0.0,
-      "consensus_votes": 3
-    },
-    {
       "name": "SCHMITT, Eric Stephen",
       "party": "R",
       "caucus": "R",
@@ -8261,21 +8201,6 @@
       "consensus_loyalty_pct": 91.3,
       "consensus_deviation_pct": 8.7,
       "consensus_votes": 46
-    },
-    {
-      "name": "VANCE, James David",
-      "party": "R",
-      "caucus": "R",
-      "state": "OH",
-      "chamber": "Senate",
-      "district": null,
-      "independence_score": 0.0,
-      "independence_label": "Mindless Drone",
-      "party_unity_pct": null,
-      "partisan_votes": 0,
-      "consensus_loyalty_pct": 100.0,
-      "consensus_deviation_pct": 0.0,
-      "consensus_votes": 1
     },
     {
       "name": "WICKER, Roger F.",
