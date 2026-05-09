@@ -657,6 +657,10 @@
 </footer>
 
 <script>
+function esc(s) {
+  return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
 const LABEL_COLORS = {
   "Mindless Drone":   "var(--s0)",
   "Yes Man":        "var(--s1)",
@@ -786,9 +790,9 @@ function renderTable() {
     const lbl    = m.independence_label || "—";
 
     return `<tr>
-      <td class="td-name">${m.name}</td>
-      <td><span class="party-pill party-${m.party}">${m.party}</span></td>
-      <td class="td-muted">${m.state || "—"}</td>
+      <td class="td-name">${esc(m.name)}</td>
+      <td><span class="party-pill party-${esc(m.party)}">${esc(m.party)}</span></td>
+      <td class="td-muted">${esc(m.state) || "—"}</td>
       <td class="td-muted">${m.chamber}</td>
       <td>
         <div class="score-bar-wrap">

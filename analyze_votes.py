@@ -72,10 +72,10 @@ for key, url in FILES.items():
     download(url, dest)
 
 # ── Load ───────────────────────────────────────────────────────────────────────
-h_votes   = pd.read_csv(DATA_DIR / "H119_votes.csv")
-s_votes   = pd.read_csv(DATA_DIR / "S119_votes.csv")
-h_members = pd.read_csv(DATA_DIR / "H119_members.csv")
-s_members = pd.read_csv(DATA_DIR / "S119_members.csv")
+h_votes   = pd.read_csv(DATA_DIR / f"H{CONGRESS}_votes.csv")
+s_votes   = pd.read_csv(DATA_DIR / f"S{CONGRESS}_votes.csv")
+h_members = pd.read_csv(DATA_DIR / f"H{CONGRESS}_members.csv")
+s_members = pd.read_csv(DATA_DIR / f"S{CONGRESS}_members.csv")
 
 votes_all   = pd.concat([h_votes, s_votes],   ignore_index=True)
 members_all = pd.concat([h_members, s_members], ignore_index=True)
