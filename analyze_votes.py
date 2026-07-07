@@ -5,7 +5,6 @@ Downloads Voteview data, scores each member, outputs JSON for GitHub Pages site.
 """
 
 import json
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -13,17 +12,8 @@ import pandas as pd
 import requests
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-# Congress number is calculated automatically from the current date.
-# A new Congress begins January 3rd of every odd-numbered year.
-# 119th Congress began January 3, 2025. Formula: ((year - 1789) // 2) + 1
-def current_congress():
-    today = datetime.now(timezone.utc)
-    year = today.year
-    if year % 2 == 0 or (year % 2 == 1 and today < datetime(year, 1, 3, tzinfo=timezone.utc)):
-        year -= 1
-    return ((year - 1789) // 2) + 1
-
-CONGRESS = current_congress()
+# ponytail: hardcoded for the 119th Congress (2025-2027); bump manually when it ends
+CONGRESS = 119
 VOTEVIEW_BASE = "https://voteview.com/static/data/out"
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
@@ -36,35 +26,12 @@ FILES = {
 }
 
 # ── Download ───────────────────────────────────────────────────────────────────
+# ponytail: no local cache — CI checks out fresh and gitignores data/, so a
+# conditional-GET cache never survives between runs. Just fetch every time.
 def download(url, dest):
-    """Download url to dest only if the remote file has changed since last download."""
-    headers = {}
-    if dest.exists():
-        # Send cached ETag/Last-Modified so server can respond 304 Not Modified
-        meta_file = dest.with_suffix(".meta")
-        if meta_file.exists():
-            meta = json.loads(meta_file.read_text())
-            if "etag" in meta:
-                headers["If-None-Match"] = meta["etag"]
-            if "last_modified" in meta:
-                headers["If-Modified-Since"] = meta["last_modified"]
-
-    r = requests.get(url, headers=headers, timeout=60)
-
-    if r.status_code == 304:
-        print(f"Unchanged (304): {url}")
-        return
-
+    r = requests.get(url, timeout=60)
     r.raise_for_status()
     dest.write_bytes(r.content)
-
-    # Cache ETag and Last-Modified for next run
-    meta = {}
-    if "ETag" in r.headers:
-        meta["etag"] = r.headers["ETag"]
-    if "Last-Modified" in r.headers:
-        meta["last_modified"] = r.headers["Last-Modified"]
-    dest.with_suffix(".meta").write_text(json.dumps(meta))
     print(f"Downloaded: {url}")
 
 for key, url in FILES.items():
@@ -85,20 +52,11 @@ votes_all = votes_all[votes_all["cast_code"].isin([1, 6])].copy()
 
 # ── Party helpers ──────────────────────────────────────────────────────────────
 # 100=D, 200=R, 328=Independent (Sanders/King caucus with D)
-def caucus(code):
-    if code == 100: return "D"
-    if code == 200: return "R"
-    if code == 328: return "D"
-    return "O"
+CAUCUS         = {100: "D", 200: "R", 328: "D"}
+DISPLAY_PARTY  = {100: "D", 200: "R", 328: "I"}
 
-def display_party(code):
-    if code == 100: return "D"
-    if code == 200: return "R"
-    if code == 328: return "I"
-    return "O"
-
-members_all["party"]         = members_all["party_code"].apply(caucus)
-members_all["display_party"] = members_all["party_code"].apply(display_party)
+members_all["party"]         = members_all["party_code"].map(CAUCUS).fillna("O")
+members_all["display_party"] = members_all["party_code"].map(DISPLAY_PARTY).fillna("O")
 
 # ── Party majority position per vote ──────────────────────────────────────────
 party_map = members_all.set_index("icpsr")["party"].to_dict()
@@ -126,14 +84,22 @@ party_positions["vote_type"] = party_positions.apply(
 votes_merged = votes_all.merge(party_positions, on=["chamber", "rollnumber"], how="inner")
 
 # ── Label ──────────────────────────────────────────────────────────────────────
+# (threshold, label) pairs, ascending — mirrors LABELS/scoreColor in docs/index.html
+LABEL_THRESHOLDS = [
+    (1.0,  "Mindless Drone"),
+    (5.0,  "Yes Man"),
+    (10.0, "Reluctant Rebel"),
+    (20.0, "Frequent Dissenter"),
+    (30.0, "Rebellious Streak"),
+    (float("inf"), "Lone Wolf"),
+]
+LABELS = [label for _, label in LABEL_THRESHOLDS]
+
 def independence_label(score_pct):
     s = round(score_pct, 2)
-    if s < 1.0:  return "Mindless Drone"
-    if s < 5.0:  return "Yes Man"
-    if s < 10.0: return "Reluctant Rebel"
-    if s < 20.0: return "Frequent Dissenter"
-    if s < 30.0: return "Rebellious Streak"
-    return "Lone Wolf"
+    for threshold, label in LABEL_THRESHOLDS:
+        if s < threshold:
+            return label
 
 # ── Score each member ──────────────────────────────────────────────────────────
 records = []
@@ -198,8 +164,7 @@ def group_stats(subset):
         "max_independence": round(max(scores), 2),
         "label_dist": {
             label: sum(1 for r in subset if r["independence_label"] == label)
-            for label in ["Mindless Drone","Yes Man","Reluctant Rebel",
-                          "Frequent Dissenter","Rebellious Streak","Lone Wolf"]
+            for label in LABELS
         }
     }
 
