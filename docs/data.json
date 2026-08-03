@@ -1,19 +1,19 @@
 {
-  "updated_at": "2026-07-27T11:32:13Z",
+  "updated_at": "2026-08-03T11:34:49Z",
   "congress": 119,
   "summary": {
     "all": {
       "count": 549,
-      "avg_independence": 5.48,
+      "avg_independence": 5.47,
       "min_independence": 0.0,
       "max_independence": 44.3,
       "label_dist": {
-        "Mindless Drone": 18,
-        "Yes Man": 359,
-        "Reluctant Rebel": 90,
-        "Frequent Dissenter": 60,
+        "Mindless Drone": 19,
+        "Yes Man": 358,
+        "Reluctant Rebel": 91,
+        "Frequent Dissenter": 58,
         "Rebellious Streak": 19,
-        "Lone Wolf": 3
+        "Lone Wolf": 4
       }
     },
     "house": {
@@ -32,16 +32,16 @@
     },
     "senate": {
       "count": 102,
-      "avg_independence": 8.45,
-      "min_independence": 0.13,
-      "max_independence": 33.06,
+      "avg_independence": 8.38,
+      "min_independence": 0.12,
+      "max_independence": 33.85,
       "label_dist": {
-        "Mindless Drone": 6,
-        "Yes Man": 30,
-        "Reluctant Rebel": 39,
-        "Frequent Dissenter": 18,
+        "Mindless Drone": 7,
+        "Yes Man": 29,
+        "Reluctant Rebel": 40,
+        "Frequent Dissenter": 16,
         "Rebellious Streak": 8,
-        "Lone Wolf": 1
+        "Lone Wolf": 2
       }
     },
     "house_dem": {
@@ -74,26 +74,26 @@
     },
     "senate_dem": {
       "count": 47,
-      "avg_independence": 11.81,
-      "min_independence": 4.64,
-      "max_independence": 29.79,
+      "avg_independence": 11.87,
+      "min_independence": 4.56,
+      "max_independence": 30.45,
       "label_dist": {
         "Mindless Drone": 0,
         "Yes Man": 1,
-        "Reluctant Rebel": 27,
-        "Frequent Dissenter": 12,
+        "Reluctant Rebel": 28,
+        "Frequent Dissenter": 10,
         "Rebellious Streak": 7,
-        "Lone Wolf": 0
+        "Lone Wolf": 1
       }
     },
     "senate_rep": {
       "count": 55,
-      "avg_independence": 5.59,
-      "min_independence": 0.13,
-      "max_independence": 33.06,
+      "avg_independence": 5.4,
+      "min_independence": 0.12,
+      "max_independence": 33.85,
       "label_dist": {
-        "Mindless Drone": 6,
-        "Yes Man": 29,
+        "Mindless Drone": 7,
+        "Yes Man": 28,
         "Reluctant Rebel": 12,
         "Frequent Dissenter": 6,
         "Rebellious Streak": 1,
@@ -6814,13 +6814,13 @@
       "state": "MD",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 8.95,
+      "independence_score": 8.68,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 97.61,
-      "partisan_votes": 796,
-      "consensus_loyalty_pct": 84.48,
-      "consensus_deviation_pct": 15.52,
-      "consensus_votes": 58
+      "party_unity_pct": 97.63,
+      "partisan_votes": 802,
+      "consensus_loyalty_pct": 85.0,
+      "consensus_deviation_pct": 15.0,
+      "consensus_votes": 60
     },
     {
       "name": "BALDWIN, Tammy",
@@ -6829,13 +6829,13 @@
       "state": "WI",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 6.38,
+      "independence_score": 6.19,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 97.77,
-      "partisan_votes": 808,
-      "consensus_loyalty_pct": 89.47,
-      "consensus_deviation_pct": 10.53,
-      "consensus_votes": 57
+      "party_unity_pct": 97.79,
+      "partisan_votes": 814,
+      "consensus_loyalty_pct": 89.83,
+      "consensus_deviation_pct": 10.17,
+      "consensus_votes": 59
     },
     {
       "name": "BENNET, Michael F.",
@@ -6844,13 +6844,13 @@
       "state": "CO",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 8.05,
+      "independence_score": 7.81,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 96.86,
-      "partisan_votes": 732,
-      "consensus_loyalty_pct": 87.04,
-      "consensus_deviation_pct": 12.96,
-      "consensus_votes": 54
+      "party_unity_pct": 96.88,
+      "partisan_votes": 738,
+      "consensus_loyalty_pct": 87.5,
+      "consensus_deviation_pct": 12.5,
+      "consensus_votes": 56
     },
     {
       "name": "BLUMENTHAL, Richard",
@@ -6859,13 +6859,13 @@
       "state": "CT",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 8.19,
+      "independence_score": 7.94,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 98.87,
-      "partisan_votes": 799,
-      "consensus_loyalty_pct": 84.75,
-      "consensus_deviation_pct": 15.25,
-      "consensus_votes": 59
+      "party_unity_pct": 98.88,
+      "partisan_votes": 805,
+      "consensus_loyalty_pct": 85.25,
+      "consensus_deviation_pct": 14.75,
+      "consensus_votes": 61
     },
     {
       "name": "BLUNT ROCHESTER, Lisa",
@@ -6874,13 +6874,13 @@
       "state": "DE",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 10.59,
+      "independence_score": 11.91,
       "independence_label": "Frequent Dissenter",
-      "party_unity_pct": 99.5,
-      "partisan_votes": 804,
-      "consensus_loyalty_pct": 79.31,
-      "consensus_deviation_pct": 20.69,
-      "consensus_votes": 58
+      "party_unity_pct": 99.51,
+      "partisan_votes": 810,
+      "consensus_loyalty_pct": 76.67,
+      "consensus_deviation_pct": 23.33,
+      "consensus_votes": 60
     },
     {
       "name": "BOOKER, Cory Anthony",
@@ -6889,13 +6889,13 @@
       "state": "NJ",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 23.42,
+      "independence_score": 22.57,
       "independence_label": "Rebellious Streak",
-      "party_unity_pct": 97.15,
-      "partisan_votes": 773,
-      "consensus_loyalty_pct": 56.0,
-      "consensus_deviation_pct": 44.0,
-      "consensus_votes": 50
+      "party_unity_pct": 97.18,
+      "partisan_votes": 779,
+      "consensus_loyalty_pct": 57.69,
+      "consensus_deviation_pct": 42.31,
+      "consensus_votes": 52
     },
     {
       "name": "CANTWELL, Maria E.",
@@ -6904,13 +6904,13 @@
       "state": "WA",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 6.14,
+      "independence_score": 5.96,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 97.89,
-      "partisan_votes": 807,
-      "consensus_loyalty_pct": 89.83,
-      "consensus_deviation_pct": 10.17,
-      "consensus_votes": 59
+      "party_unity_pct": 97.91,
+      "partisan_votes": 813,
+      "consensus_loyalty_pct": 90.16,
+      "consensus_deviation_pct": 9.84,
+      "consensus_votes": 61
     },
     {
       "name": "COONS, Christopher A.",
@@ -6919,13 +6919,13 @@
       "state": "DE",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 7.47,
+      "independence_score": 7.29,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 93.99,
-      "partisan_votes": 766,
-      "consensus_loyalty_pct": 91.07,
-      "consensus_deviation_pct": 8.93,
-      "consensus_votes": 56
+      "party_unity_pct": 94.04,
+      "partisan_votes": 772,
+      "consensus_loyalty_pct": 91.38,
+      "consensus_deviation_pct": 8.62,
+      "consensus_votes": 58
     },
     {
       "name": "CORTEZ MASTO, Catherine Marie",
@@ -6934,13 +6934,13 @@
       "state": "NV",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 6.13,
+      "independence_score": 6.04,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 91.31,
-      "partisan_votes": 794,
-      "consensus_loyalty_pct": 96.43,
-      "consensus_deviation_pct": 3.57,
-      "consensus_votes": 56
+      "party_unity_pct": 91.38,
+      "partisan_votes": 800,
+      "consensus_loyalty_pct": 96.55,
+      "consensus_deviation_pct": 3.45,
+      "consensus_votes": 58
     },
     {
       "name": "DUCKWORTH, Tammy",
@@ -6949,13 +6949,13 @@
       "state": "IL",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 10.06,
-      "independence_label": "Frequent Dissenter",
-      "party_unity_pct": 98.41,
-      "partisan_votes": 754,
-      "consensus_loyalty_pct": 81.48,
-      "consensus_deviation_pct": 18.52,
-      "consensus_votes": 54
+      "independence_score": 9.72,
+      "independence_label": "Reluctant Rebel",
+      "party_unity_pct": 98.42,
+      "partisan_votes": 760,
+      "consensus_loyalty_pct": 82.14,
+      "consensus_deviation_pct": 17.86,
+      "consensus_votes": 56
     },
     {
       "name": "DURBIN, Richard Joseph",
@@ -6964,13 +6964,13 @@
       "state": "IL",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 8.48,
+      "independence_score": 8.28,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 93.38,
-      "partisan_votes": 786,
-      "consensus_loyalty_pct": 89.66,
-      "consensus_deviation_pct": 10.34,
-      "consensus_votes": 58
+      "party_unity_pct": 93.43,
+      "partisan_votes": 792,
+      "consensus_loyalty_pct": 90.0,
+      "consensus_deviation_pct": 10.0,
+      "consensus_votes": 60
     },
     {
       "name": "FETTERMAN, John Karl",
@@ -6979,13 +6979,13 @@
       "state": "PA",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 11.33,
+      "independence_score": 11.28,
       "independence_label": "Frequent Dissenter",
-      "party_unity_pct": 79.23,
-      "partisan_votes": 756,
-      "consensus_loyalty_pct": 98.11,
-      "consensus_deviation_pct": 1.89,
-      "consensus_votes": 53
+      "party_unity_pct": 79.27,
+      "partisan_votes": 762,
+      "consensus_loyalty_pct": 98.18,
+      "consensus_deviation_pct": 1.82,
+      "consensus_votes": 55
     },
     {
       "name": "GALLEGO, Ruben",
@@ -6994,13 +6994,13 @@
       "state": "AZ",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 5.26,
+      "independence_score": 5.21,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 91.56,
-      "partisan_votes": 711,
-      "consensus_loyalty_pct": 97.92,
-      "consensus_deviation_pct": 2.08,
-      "consensus_votes": 48
+      "party_unity_pct": 91.62,
+      "partisan_votes": 716,
+      "consensus_loyalty_pct": 97.96,
+      "consensus_deviation_pct": 2.04,
+      "consensus_votes": 49
     },
     {
       "name": "GILLIBRAND, Kirsten",
@@ -7009,13 +7009,13 @@
       "state": "NY",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 5.66,
+      "independence_score": 5.53,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 95.46,
-      "partisan_votes": 793,
-      "consensus_loyalty_pct": 93.22,
-      "consensus_deviation_pct": 6.78,
-      "consensus_votes": 59
+      "party_unity_pct": 95.49,
+      "partisan_votes": 798,
+      "consensus_loyalty_pct": 93.44,
+      "consensus_deviation_pct": 6.56,
+      "consensus_votes": 61
     },
     {
       "name": "HASSAN, Margaret Wood (Maggie)",
@@ -7024,13 +7024,13 @@
       "state": "NH",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 7.46,
+      "independence_score": 9.05,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 86.81,
-      "partisan_votes": 796,
-      "consensus_loyalty_pct": 98.28,
-      "consensus_deviation_pct": 1.72,
-      "consensus_votes": 58
+      "party_unity_pct": 86.91,
+      "partisan_votes": 802,
+      "consensus_loyalty_pct": 95.0,
+      "consensus_deviation_pct": 5.0,
+      "consensus_votes": 60
     },
     {
       "name": "HEINRICH, Martin",
@@ -7039,13 +7039,13 @@
       "state": "NM",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 7.4,
+      "independence_score": 7.24,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 93.68,
-      "partisan_votes": 775,
-      "consensus_loyalty_pct": 91.53,
-      "consensus_deviation_pct": 8.47,
-      "consensus_votes": 59
+      "party_unity_pct": 93.73,
+      "partisan_votes": 781,
+      "consensus_loyalty_pct": 91.8,
+      "consensus_deviation_pct": 8.2,
+      "consensus_votes": 61
     },
     {
       "name": "HICKENLOOPER, John Wright",
@@ -7054,13 +7054,13 @@
       "state": "CO",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 6.87,
+      "independence_score": 6.71,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 94.74,
-      "partisan_votes": 799,
-      "consensus_loyalty_pct": 91.53,
-      "consensus_deviation_pct": 8.47,
-      "consensus_votes": 59
+      "party_unity_pct": 94.78,
+      "partisan_votes": 805,
+      "consensus_loyalty_pct": 91.8,
+      "consensus_deviation_pct": 8.2,
+      "consensus_votes": 61
     },
     {
       "name": "HIRONO, Mazie",
@@ -7069,13 +7069,13 @@
       "state": "HI",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 15.94,
+      "independence_score": 17.07,
       "independence_label": "Frequent Dissenter",
-      "party_unity_pct": 98.64,
-      "partisan_votes": 806,
-      "consensus_loyalty_pct": 69.49,
-      "consensus_deviation_pct": 30.51,
-      "consensus_votes": 59
+      "party_unity_pct": 98.65,
+      "partisan_votes": 812,
+      "consensus_loyalty_pct": 67.21,
+      "consensus_deviation_pct": 32.79,
+      "consensus_votes": 61
     },
     {
       "name": "KAINE, Timothy Michael (Tim)",
@@ -7084,13 +7084,13 @@
       "state": "VA",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 7.55,
+      "independence_score": 7.43,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 89.97,
-      "partisan_votes": 798,
-      "consensus_loyalty_pct": 94.92,
-      "consensus_deviation_pct": 5.08,
-      "consensus_votes": 59
+      "party_unity_pct": 90.05,
+      "partisan_votes": 804,
+      "consensus_loyalty_pct": 95.08,
+      "consensus_deviation_pct": 4.92,
+      "consensus_votes": 61
     },
     {
       "name": "KELLY, Mark Edward",
@@ -7099,13 +7099,13 @@
       "state": "AZ",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 5.4,
+      "independence_score": 5.34,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 90.96,
-      "partisan_votes": 763,
-      "consensus_loyalty_pct": 98.25,
-      "consensus_deviation_pct": 1.75,
-      "consensus_votes": 57
+      "party_unity_pct": 91.02,
+      "partisan_votes": 768,
+      "consensus_loyalty_pct": 98.31,
+      "consensus_deviation_pct": 1.69,
+      "consensus_votes": 59
     },
     {
       "name": "KIM, Andy",
@@ -7114,13 +7114,13 @@
       "state": "NJ",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 16.47,
+      "independence_score": 17.62,
       "independence_label": "Frequent Dissenter",
-      "party_unity_pct": 95.88,
-      "partisan_votes": 801,
-      "consensus_loyalty_pct": 71.19,
-      "consensus_deviation_pct": 28.81,
-      "consensus_votes": 59
+      "party_unity_pct": 95.91,
+      "partisan_votes": 807,
+      "consensus_loyalty_pct": 68.85,
+      "consensus_deviation_pct": 31.15,
+      "consensus_votes": 61
     },
     {
       "name": "KLOBUCHAR, Amy",
@@ -7129,13 +7129,13 @@
       "state": "MN",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 4.64,
+      "independence_score": 4.56,
       "independence_label": "Yes Man",
-      "party_unity_pct": 94.12,
-      "partisan_votes": 799,
-      "consensus_loyalty_pct": 96.61,
-      "consensus_deviation_pct": 3.39,
-      "consensus_votes": 59
+      "party_unity_pct": 94.16,
+      "partisan_votes": 805,
+      "consensus_loyalty_pct": 96.72,
+      "consensus_deviation_pct": 3.28,
+      "consensus_votes": 61
     },
     {
       "name": "LUJ\u00c1N, Ben Ray",
@@ -7144,13 +7144,13 @@
       "state": "NM",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 8.03,
+      "independence_score": 7.8,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 97.49,
-      "partisan_votes": 797,
-      "consensus_loyalty_pct": 86.44,
-      "consensus_deviation_pct": 13.56,
-      "consensus_votes": 59
+      "party_unity_pct": 97.51,
+      "partisan_votes": 803,
+      "consensus_loyalty_pct": 86.89,
+      "consensus_deviation_pct": 13.11,
+      "consensus_votes": 61
     },
     {
       "name": "MARKEY, Edward John",
@@ -7159,13 +7159,13 @@
       "state": "MA",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 29.79,
-      "independence_label": "Rebellious Streak",
+      "independence_score": 30.45,
+      "independence_label": "Lone Wolf",
       "party_unity_pct": 99.75,
-      "partisan_votes": 803,
-      "consensus_loyalty_pct": 40.68,
-      "consensus_deviation_pct": 59.32,
-      "consensus_votes": 59
+      "partisan_votes": 809,
+      "consensus_loyalty_pct": 39.34,
+      "consensus_deviation_pct": 60.66,
+      "consensus_votes": 61
     },
     {
       "name": "MERKLEY, Jeff",
@@ -7174,13 +7174,13 @@
       "state": "OR",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 23.07,
+      "independence_score": 22.32,
       "independence_label": "Rebellious Streak",
       "party_unity_pct": 99.63,
-      "partisan_votes": 802,
-      "consensus_loyalty_pct": 54.24,
-      "consensus_deviation_pct": 45.76,
-      "consensus_votes": 59
+      "partisan_votes": 808,
+      "consensus_loyalty_pct": 55.74,
+      "consensus_deviation_pct": 44.26,
+      "consensus_votes": 61
     },
     {
       "name": "MURPHY, Christopher",
@@ -7189,13 +7189,13 @@
       "state": "CT",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 29.37,
+      "independence_score": 28.4,
       "independence_label": "Rebellious Streak",
       "party_unity_pct": 99.87,
-      "partisan_votes": 787,
-      "consensus_loyalty_pct": 41.38,
-      "consensus_deviation_pct": 58.62,
-      "consensus_votes": 58
+      "partisan_votes": 793,
+      "consensus_loyalty_pct": 43.33,
+      "consensus_deviation_pct": 56.67,
+      "consensus_votes": 60
     },
     {
       "name": "MURRAY, Patty",
@@ -7204,13 +7204,13 @@
       "state": "WA",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 13.27,
+      "independence_score": 12.79,
       "independence_label": "Frequent Dissenter",
       "party_unity_pct": 99.87,
-      "partisan_votes": 764,
-      "consensus_loyalty_pct": 73.58,
-      "consensus_deviation_pct": 26.42,
-      "consensus_votes": 53
+      "partisan_votes": 770,
+      "consensus_loyalty_pct": 74.55,
+      "consensus_deviation_pct": 25.45,
+      "consensus_votes": 55
     },
     {
       "name": "OSSOFF, Thomas Jonathan (Jon)",
@@ -7219,13 +7219,13 @@
       "state": "GA",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 5.6,
+      "independence_score": 7.24,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 96.2,
-      "partisan_votes": 763,
-      "consensus_loyalty_pct": 92.59,
-      "consensus_deviation_pct": 7.41,
-      "consensus_votes": 54
+      "party_unity_pct": 96.23,
+      "partisan_votes": 769,
+      "consensus_loyalty_pct": 89.29,
+      "consensus_deviation_pct": 10.71,
+      "consensus_votes": 56
     },
     {
       "name": "PADILLA, Alejandro (Alex)",
@@ -7234,13 +7234,13 @@
       "state": "CA",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 19.99,
-      "independence_label": "Frequent Dissenter",
-      "party_unity_pct": 98.21,
-      "partisan_votes": 780,
-      "consensus_loyalty_pct": 61.82,
-      "consensus_deviation_pct": 38.18,
-      "consensus_votes": 55
+      "independence_score": 21.07,
+      "independence_label": "Rebellious Streak",
+      "party_unity_pct": 98.22,
+      "partisan_votes": 786,
+      "consensus_loyalty_pct": 59.65,
+      "consensus_deviation_pct": 40.35,
+      "consensus_votes": 57
     },
     {
       "name": "PETERS, Gary C.",
@@ -7249,13 +7249,13 @@
       "state": "MI",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 5.41,
+      "independence_score": 5.3,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 94.45,
-      "partisan_votes": 793,
-      "consensus_loyalty_pct": 94.74,
-      "consensus_deviation_pct": 5.26,
-      "consensus_votes": 57
+      "party_unity_pct": 94.49,
+      "partisan_votes": 798,
+      "consensus_loyalty_pct": 94.92,
+      "consensus_deviation_pct": 5.08,
+      "consensus_votes": 59
     },
     {
       "name": "REED, John F. (Jack)",
@@ -7264,13 +7264,13 @@
       "state": "RI",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 7.96,
+      "independence_score": 7.77,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 94.26,
-      "partisan_votes": 801,
-      "consensus_loyalty_pct": 89.83,
-      "consensus_deviation_pct": 10.17,
-      "consensus_votes": 59
+      "party_unity_pct": 94.3,
+      "partisan_votes": 807,
+      "consensus_loyalty_pct": 90.16,
+      "consensus_deviation_pct": 9.84,
+      "consensus_votes": 61
     },
     {
       "name": "ROSEN, Jacklyn Sheryl",
@@ -7279,13 +7279,13 @@
       "state": "NV",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 5.34,
+      "independence_score": 5.3,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 89.32,
-      "partisan_votes": 796,
+      "party_unity_pct": 89.4,
+      "partisan_votes": 802,
       "consensus_loyalty_pct": 100.0,
       "consensus_deviation_pct": 0.0,
-      "consensus_votes": 59
+      "consensus_votes": 61
     },
     {
       "name": "SCHATZ, Brian Emanuel",
@@ -7294,13 +7294,13 @@
       "state": "HI",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 19.21,
+      "independence_score": 18.59,
       "independence_label": "Frequent Dissenter",
-      "party_unity_pct": 98.87,
-      "partisan_votes": 799,
-      "consensus_loyalty_pct": 62.71,
-      "consensus_deviation_pct": 37.29,
-      "consensus_votes": 59
+      "party_unity_pct": 98.88,
+      "partisan_votes": 805,
+      "consensus_loyalty_pct": 63.93,
+      "consensus_deviation_pct": 36.07,
+      "consensus_votes": 61
     },
     {
       "name": "SCHIFF, Adam",
@@ -7309,13 +7309,13 @@
       "state": "CA",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 16.63,
+      "independence_score": 16.12,
       "independence_label": "Frequent Dissenter",
-      "party_unity_pct": 95.32,
-      "partisan_votes": 790,
-      "consensus_loyalty_pct": 71.43,
-      "consensus_deviation_pct": 28.57,
-      "consensus_votes": 56
+      "party_unity_pct": 95.35,
+      "partisan_votes": 796,
+      "consensus_loyalty_pct": 72.41,
+      "consensus_deviation_pct": 27.59,
+      "consensus_votes": 58
     },
     {
       "name": "SCHUMER, Charles Ellis (Chuck)",
@@ -7324,13 +7324,13 @@
       "state": "NY",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 8.25,
+      "independence_score": 7.99,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 98.76,
-      "partisan_votes": 805,
-      "consensus_loyalty_pct": 84.75,
-      "consensus_deviation_pct": 15.25,
-      "consensus_votes": 59
+      "party_unity_pct": 98.77,
+      "partisan_votes": 811,
+      "consensus_loyalty_pct": 85.25,
+      "consensus_deviation_pct": 14.75,
+      "consensus_votes": 61
     },
     {
       "name": "SHAHEEN, Jeanne",
@@ -7339,13 +7339,13 @@
       "state": "NH",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 7.48,
+      "independence_score": 7.43,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 85.03,
-      "partisan_votes": 775,
+      "party_unity_pct": 85.15,
+      "partisan_votes": 781,
       "consensus_loyalty_pct": 100.0,
       "consensus_deviation_pct": 0.0,
-      "consensus_votes": 57
+      "consensus_votes": 59
     },
     {
       "name": "SLOTKIN, Elissa",
@@ -7354,13 +7354,13 @@
       "state": "MI",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 5.76,
+      "independence_score": 5.67,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 91.99,
-      "partisan_votes": 787,
-      "consensus_loyalty_pct": 96.49,
-      "consensus_deviation_pct": 3.51,
-      "consensus_votes": 57
+      "party_unity_pct": 92.06,
+      "partisan_votes": 793,
+      "consensus_loyalty_pct": 96.61,
+      "consensus_deviation_pct": 3.39,
+      "consensus_votes": 59
     },
     {
       "name": "SMITH, Tina",
@@ -7369,13 +7369,13 @@
       "state": "MN",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 14.41,
+      "independence_score": 13.93,
       "independence_label": "Frequent Dissenter",
       "party_unity_pct": 100.0,
-      "partisan_votes": 768,
-      "consensus_loyalty_pct": 71.19,
-      "consensus_deviation_pct": 28.81,
-      "consensus_votes": 59
+      "partisan_votes": 774,
+      "consensus_loyalty_pct": 72.13,
+      "consensus_deviation_pct": 27.87,
+      "consensus_votes": 61
     },
     {
       "name": "VAN HOLLEN, Christopher",
@@ -7384,13 +7384,13 @@
       "state": "MD",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 22.03,
+      "independence_score": 21.31,
       "independence_label": "Rebellious Streak",
       "party_unity_pct": 100.0,
-      "partisan_votes": 796,
-      "consensus_loyalty_pct": 55.93,
-      "consensus_deviation_pct": 44.07,
-      "consensus_votes": 59
+      "partisan_votes": 802,
+      "consensus_loyalty_pct": 57.38,
+      "consensus_deviation_pct": 42.62,
+      "consensus_votes": 61
     },
     {
       "name": "WARNER, Mark R.",
@@ -7399,13 +7399,13 @@
       "state": "VA",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 7.72,
+      "independence_score": 7.59,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 89.92,
-      "partisan_votes": 774,
-      "consensus_loyalty_pct": 94.64,
-      "consensus_deviation_pct": 5.36,
-      "consensus_votes": 56
+      "party_unity_pct": 90.0,
+      "partisan_votes": 780,
+      "consensus_loyalty_pct": 94.83,
+      "consensus_deviation_pct": 5.17,
+      "consensus_votes": 58
     },
     {
       "name": "WARNOCK, Raphael Gamaliel",
@@ -7414,13 +7414,13 @@
       "state": "GA",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 7.07,
+      "independence_score": 6.9,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 94.79,
-      "partisan_votes": 787,
-      "consensus_loyalty_pct": 91.07,
-      "consensus_deviation_pct": 8.93,
-      "consensus_votes": 56
+      "party_unity_pct": 94.83,
+      "partisan_votes": 793,
+      "consensus_loyalty_pct": 91.38,
+      "consensus_deviation_pct": 8.62,
+      "consensus_votes": 58
     },
     {
       "name": "WARREN, Elizabeth",
@@ -7429,13 +7429,13 @@
       "state": "MA",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 28.09,
+      "independence_score": 28.81,
       "independence_label": "Rebellious Streak",
       "party_unity_pct": 99.75,
-      "partisan_votes": 795,
-      "consensus_loyalty_pct": 44.07,
-      "consensus_deviation_pct": 55.93,
-      "consensus_votes": 59
+      "partisan_votes": 801,
+      "consensus_loyalty_pct": 42.62,
+      "consensus_deviation_pct": 57.38,
+      "consensus_votes": 61
     },
     {
       "name": "WELCH, Peter",
@@ -7444,13 +7444,13 @@
       "state": "VT",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 15.56,
+      "independence_score": 16.94,
       "independence_label": "Frequent Dissenter",
-      "party_unity_pct": 96.88,
-      "partisan_votes": 768,
-      "consensus_loyalty_pct": 72.0,
-      "consensus_deviation_pct": 28.0,
-      "consensus_votes": 50
+      "party_unity_pct": 96.9,
+      "partisan_votes": 773,
+      "consensus_loyalty_pct": 69.23,
+      "consensus_deviation_pct": 30.77,
+      "consensus_votes": 52
     },
     {
       "name": "WHITEHOUSE, Sheldon",
@@ -7459,13 +7459,13 @@
       "state": "RI",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 5.18,
+      "independence_score": 5.11,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 95.01,
-      "partisan_votes": 781,
-      "consensus_loyalty_pct": 94.64,
-      "consensus_deviation_pct": 5.36,
-      "consensus_votes": 56
+      "party_unity_pct": 95.04,
+      "partisan_votes": 786,
+      "consensus_loyalty_pct": 94.74,
+      "consensus_deviation_pct": 5.26,
+      "consensus_votes": 57
     },
     {
       "name": "WYDEN, Ronald Lee",
@@ -7474,13 +7474,13 @@
       "state": "OR",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 15.51,
+      "independence_score": 16.64,
       "independence_label": "Frequent Dissenter",
-      "party_unity_pct": 99.49,
-      "partisan_votes": 792,
-      "consensus_loyalty_pct": 69.49,
-      "consensus_deviation_pct": 30.51,
-      "consensus_votes": 59
+      "party_unity_pct": 99.5,
+      "partisan_votes": 798,
+      "consensus_loyalty_pct": 67.21,
+      "consensus_deviation_pct": 32.79,
+      "consensus_votes": 61
     },
     {
       "name": "KING, Angus Stanley, Jr.",
@@ -7489,13 +7489,13 @@
       "state": "ME",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 7.51,
+      "independence_score": 7.43,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 86.68,
-      "partisan_votes": 796,
-      "consensus_loyalty_pct": 98.31,
-      "consensus_deviation_pct": 1.69,
-      "consensus_votes": 59
+      "party_unity_pct": 86.78,
+      "partisan_votes": 802,
+      "consensus_loyalty_pct": 98.36,
+      "consensus_deviation_pct": 1.64,
+      "consensus_votes": 61
     },
     {
       "name": "SANDERS, Bernard",
@@ -7504,13 +7504,13 @@
       "state": "VT",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 29.01,
+      "independence_score": 29.73,
       "independence_label": "Rebellious Streak",
       "party_unity_pct": 99.87,
-      "partisan_votes": 748,
-      "consensus_loyalty_pct": 42.11,
-      "consensus_deviation_pct": 57.89,
-      "consensus_votes": 57
+      "partisan_votes": 754,
+      "consensus_loyalty_pct": 40.68,
+      "consensus_deviation_pct": 59.32,
+      "consensus_votes": 59
     },
     {
       "name": "ARMSTRONG, Alan",
@@ -7519,13 +7519,13 @@
       "state": "OK",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 14.29,
+      "independence_score": 11.11,
       "independence_label": "Frequent Dissenter",
       "party_unity_pct": 100.0,
-      "partisan_votes": 137,
-      "consensus_loyalty_pct": 71.43,
-      "consensus_deviation_pct": 28.57,
-      "consensus_votes": 7
+      "partisan_votes": 143,
+      "consensus_loyalty_pct": 77.78,
+      "consensus_deviation_pct": 22.22,
+      "consensus_votes": 9
     },
     {
       "name": "BANKS, James E.",
@@ -7534,13 +7534,13 @@
       "state": "IN",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 5.17,
+      "independence_score": 5.0,
       "independence_label": "Reluctant Rebel",
       "party_unity_pct": 100.0,
-      "partisan_votes": 799,
-      "consensus_loyalty_pct": 89.66,
-      "consensus_deviation_pct": 10.34,
-      "consensus_votes": 58
+      "partisan_votes": 805,
+      "consensus_loyalty_pct": 90.0,
+      "consensus_deviation_pct": 10.0,
+      "consensus_votes": 60
     },
     {
       "name": "BARRASSO, John A.",
@@ -7549,13 +7549,13 @@
       "state": "WY",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 4.3,
+      "independence_score": 4.16,
       "independence_label": "Yes Man",
       "party_unity_pct": 99.88,
-      "partisan_votes": 805,
-      "consensus_loyalty_pct": 91.53,
-      "consensus_deviation_pct": 8.47,
-      "consensus_votes": 59
+      "partisan_votes": 811,
+      "consensus_loyalty_pct": 91.8,
+      "consensus_deviation_pct": 8.2,
+      "consensus_votes": 61
     },
     {
       "name": "BLACKBURN, Marsha",
@@ -7564,13 +7564,13 @@
       "state": "TN",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 3.64,
+      "independence_score": 3.51,
       "independence_label": "Yes Man",
       "party_unity_pct": 100.0,
-      "partisan_votes": 768,
-      "consensus_loyalty_pct": 92.73,
-      "consensus_deviation_pct": 7.27,
-      "consensus_votes": 55
+      "partisan_votes": 773,
+      "consensus_loyalty_pct": 92.98,
+      "consensus_deviation_pct": 7.02,
+      "consensus_votes": 57
     },
     {
       "name": "BOOZMAN, John",
@@ -7581,11 +7581,11 @@
       "district": null,
       "independence_score": 0.44,
       "independence_label": "Mindless Drone",
-      "party_unity_pct": 99.12,
-      "partisan_votes": 796,
+      "party_unity_pct": 99.13,
+      "partisan_votes": 802,
       "consensus_loyalty_pct": 100.0,
       "consensus_deviation_pct": 0.0,
-      "consensus_votes": 59
+      "consensus_votes": 61
     },
     {
       "name": "BRITT, Katie Elizabeth",
@@ -7594,13 +7594,13 @@
       "state": "AL",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 3.45,
+      "independence_score": 3.34,
       "independence_label": "Yes Man",
       "party_unity_pct": 99.87,
-      "partisan_votes": 788,
-      "consensus_loyalty_pct": 93.22,
-      "consensus_deviation_pct": 6.78,
-      "consensus_votes": 59
+      "partisan_votes": 794,
+      "consensus_loyalty_pct": 93.44,
+      "consensus_deviation_pct": 6.56,
+      "consensus_votes": 61
     },
     {
       "name": "BUDD, Theodore Paul",
@@ -7609,13 +7609,13 @@
       "state": "NC",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 7.82,
+      "independence_score": 7.57,
       "independence_label": "Reluctant Rebel",
       "party_unity_pct": 99.62,
-      "partisan_votes": 784,
-      "consensus_loyalty_pct": 84.75,
-      "consensus_deviation_pct": 15.25,
-      "consensus_votes": 59
+      "partisan_votes": 790,
+      "consensus_loyalty_pct": 85.25,
+      "consensus_deviation_pct": 14.75,
+      "consensus_votes": 61
     },
     {
       "name": "CAPITO, Shelley Moore",
@@ -7624,13 +7624,13 @@
       "state": "WV",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 1.24,
+      "independence_score": 1.21,
       "independence_label": "Yes Man",
-      "party_unity_pct": 99.24,
-      "partisan_votes": 793,
-      "consensus_loyalty_pct": 98.28,
-      "consensus_deviation_pct": 1.72,
-      "consensus_votes": 58
+      "party_unity_pct": 99.25,
+      "partisan_votes": 799,
+      "consensus_loyalty_pct": 98.33,
+      "consensus_deviation_pct": 1.67,
+      "consensus_votes": 60
     },
     {
       "name": "CASSIDY, Bill",
@@ -7639,13 +7639,13 @@
       "state": "LA",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 4.82,
+      "independence_score": 4.67,
       "independence_label": "Yes Man",
-      "party_unity_pct": 97.92,
-      "partisan_votes": 768,
-      "consensus_loyalty_pct": 92.45,
-      "consensus_deviation_pct": 7.55,
-      "consensus_votes": 53
+      "party_unity_pct": 97.93,
+      "partisan_votes": 774,
+      "consensus_loyalty_pct": 92.73,
+      "consensus_deviation_pct": 7.27,
+      "consensus_votes": 55
     },
     {
       "name": "COLLINS, Susan Margaret",
@@ -7654,13 +7654,13 @@
       "state": "ME",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 10.7,
+      "independence_score": 10.62,
       "independence_label": "Frequent Dissenter",
       "party_unity_pct": 83.68,
-      "partisan_votes": 809,
-      "consensus_loyalty_pct": 94.92,
-      "consensus_deviation_pct": 5.08,
-      "consensus_votes": 59
+      "partisan_votes": 815,
+      "consensus_loyalty_pct": 95.08,
+      "consensus_deviation_pct": 4.92,
+      "consensus_votes": 61
     },
     {
       "name": "CORNYN, John",
@@ -7669,13 +7669,13 @@
       "state": "TX",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 1.79,
+      "independence_score": 1.72,
       "independence_label": "Yes Man",
       "party_unity_pct": 100.0,
-      "partisan_votes": 802,
-      "consensus_loyalty_pct": 96.43,
-      "consensus_deviation_pct": 3.57,
-      "consensus_votes": 56
+      "partisan_votes": 808,
+      "consensus_loyalty_pct": 96.55,
+      "consensus_deviation_pct": 3.45,
+      "consensus_votes": 58
     },
     {
       "name": "COTTON, Thomas Bryant (Tom)",
@@ -7684,13 +7684,13 @@
       "state": "AR",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 0.13,
+      "independence_score": 0.12,
       "independence_label": "Mindless Drone",
       "party_unity_pct": 99.75,
-      "partisan_votes": 797,
+      "partisan_votes": 803,
       "consensus_loyalty_pct": 100.0,
       "consensus_deviation_pct": 0.0,
-      "consensus_votes": 58
+      "consensus_votes": 60
     },
     {
       "name": "CRAMER, Kevin",
@@ -7699,13 +7699,13 @@
       "state": "ND",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 1.92,
+      "independence_score": 1.86,
       "independence_label": "Yes Man",
       "party_unity_pct": 99.62,
-      "partisan_votes": 780,
-      "consensus_loyalty_pct": 96.55,
-      "consensus_deviation_pct": 3.45,
-      "consensus_votes": 58
+      "partisan_votes": 786,
+      "consensus_loyalty_pct": 96.67,
+      "consensus_deviation_pct": 3.33,
+      "consensus_votes": 60
     },
     {
       "name": "CRAPO, Michael Dean",
@@ -7714,13 +7714,13 @@
       "state": "ID",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 1.76,
+      "independence_score": 1.7,
       "independence_label": "Yes Man",
-      "party_unity_pct": 99.87,
-      "partisan_votes": 798,
-      "consensus_loyalty_pct": 96.61,
-      "consensus_deviation_pct": 3.39,
-      "consensus_votes": 59
+      "party_unity_pct": 99.88,
+      "partisan_votes": 804,
+      "consensus_loyalty_pct": 96.72,
+      "consensus_deviation_pct": 3.28,
+      "consensus_votes": 61
     },
     {
       "name": "CRUZ, Rafael Edward (Ted)",
@@ -7729,13 +7729,13 @@
       "state": "TX",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 13.03,
+      "independence_score": 12.56,
       "independence_label": "Frequent Dissenter",
       "party_unity_pct": 99.87,
-      "partisan_votes": 768,
-      "consensus_loyalty_pct": 74.07,
-      "consensus_deviation_pct": 25.93,
-      "consensus_votes": 54
+      "partisan_votes": 773,
+      "consensus_loyalty_pct": 75.0,
+      "consensus_deviation_pct": 25.0,
+      "consensus_votes": 56
     },
     {
       "name": "CURTIS, John R.",
@@ -7744,13 +7744,13 @@
       "state": "UT",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 7.02,
+      "independence_score": 6.79,
       "independence_label": "Reluctant Rebel",
       "party_unity_pct": 99.75,
-      "partisan_votes": 791,
-      "consensus_loyalty_pct": 86.21,
-      "consensus_deviation_pct": 13.79,
-      "consensus_votes": 58
+      "partisan_votes": 797,
+      "consensus_loyalty_pct": 86.67,
+      "consensus_deviation_pct": 13.33,
+      "consensus_votes": 60
     },
     {
       "name": "DAINES, Steve",
@@ -7759,13 +7759,13 @@
       "state": "MT",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 1.79,
+      "independence_score": 1.73,
       "independence_label": "Yes Man",
       "party_unity_pct": 99.87,
-      "partisan_votes": 785,
-      "consensus_loyalty_pct": 96.55,
-      "consensus_deviation_pct": 3.45,
-      "consensus_votes": 58
+      "partisan_votes": 791,
+      "consensus_loyalty_pct": 96.67,
+      "consensus_deviation_pct": 3.33,
+      "consensus_votes": 60
     },
     {
       "name": "ERNST, Joni",
@@ -7774,13 +7774,13 @@
       "state": "IA",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 4.59,
+      "independence_score": 4.44,
       "independence_label": "Yes Man",
       "party_unity_pct": 99.75,
-      "partisan_votes": 793,
-      "consensus_loyalty_pct": 91.07,
-      "consensus_deviation_pct": 8.93,
-      "consensus_votes": 56
+      "partisan_votes": 799,
+      "consensus_loyalty_pct": 91.38,
+      "consensus_deviation_pct": 8.62,
+      "consensus_votes": 58
     },
     {
       "name": "FISCHER, Debra (Deb)",
@@ -7789,13 +7789,13 @@
       "state": "NE",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 1.16,
+      "independence_score": 1.13,
       "independence_label": "Yes Man",
       "party_unity_pct": 99.38,
-      "partisan_votes": 800,
-      "consensus_loyalty_pct": 98.31,
-      "consensus_deviation_pct": 1.69,
-      "consensus_votes": 59
+      "partisan_votes": 806,
+      "consensus_loyalty_pct": 98.36,
+      "consensus_deviation_pct": 1.64,
+      "consensus_votes": 61
     },
     {
       "name": "GRAHAM, Lindsey O.",
@@ -7819,13 +7819,13 @@
       "state": "IA",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 1.21,
+      "independence_score": 1.18,
       "independence_label": "Yes Man",
       "party_unity_pct": 99.37,
-      "partisan_votes": 788,
-      "consensus_loyalty_pct": 98.21,
-      "consensus_deviation_pct": 1.79,
-      "consensus_votes": 56
+      "partisan_votes": 794,
+      "consensus_loyalty_pct": 98.28,
+      "consensus_deviation_pct": 1.72,
+      "consensus_votes": 58
     },
     {
       "name": "HAGERTY, William Francis (Bill)",
@@ -7834,13 +7834,13 @@
       "state": "TN",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 6.25,
+      "independence_score": 6.03,
       "independence_label": "Reluctant Rebel",
       "party_unity_pct": 100.0,
-      "partisan_votes": 781,
-      "consensus_loyalty_pct": 87.5,
-      "consensus_deviation_pct": 12.5,
-      "consensus_votes": 56
+      "partisan_votes": 787,
+      "consensus_loyalty_pct": 87.93,
+      "consensus_deviation_pct": 12.07,
+      "consensus_votes": 58
     },
     {
       "name": "HAWLEY, Joshua David",
@@ -7849,13 +7849,13 @@
       "state": "MO",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 7.52,
+      "independence_score": 7.31,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 95.88,
-      "partisan_votes": 776,
-      "consensus_loyalty_pct": 89.09,
-      "consensus_deviation_pct": 10.91,
-      "consensus_votes": 55
+      "party_unity_pct": 95.91,
+      "partisan_votes": 782,
+      "consensus_loyalty_pct": 89.47,
+      "consensus_deviation_pct": 10.53,
+      "consensus_votes": 57
     },
     {
       "name": "HOEVEN, John",
@@ -7864,13 +7864,13 @@
       "state": "ND",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 1.85,
+      "independence_score": 1.79,
       "independence_label": "Yes Man",
       "party_unity_pct": 99.75,
-      "partisan_votes": 801,
-      "consensus_loyalty_pct": 96.55,
-      "consensus_deviation_pct": 3.45,
-      "consensus_votes": 58
+      "partisan_votes": 807,
+      "consensus_loyalty_pct": 96.67,
+      "consensus_deviation_pct": 3.33,
+      "consensus_votes": 60
     },
     {
       "name": "HUSTED, Jon Allen",
@@ -7879,13 +7879,13 @@
       "state": "OH",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 4.84,
+      "independence_score": 4.68,
       "independence_label": "Yes Man",
-      "party_unity_pct": 99.25,
-      "partisan_votes": 804,
-      "consensus_loyalty_pct": 91.07,
-      "consensus_deviation_pct": 8.93,
-      "consensus_votes": 56
+      "party_unity_pct": 99.26,
+      "partisan_votes": 810,
+      "consensus_loyalty_pct": 91.38,
+      "consensus_deviation_pct": 8.62,
+      "consensus_votes": 58
     },
     {
       "name": "HYDE-SMITH, Cindy",
@@ -7894,13 +7894,13 @@
       "state": "MS",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 2.04,
+      "independence_score": 1.98,
       "independence_label": "Yes Man",
-      "party_unity_pct": 99.37,
-      "partisan_votes": 794,
-      "consensus_loyalty_pct": 96.55,
-      "consensus_deviation_pct": 3.45,
-      "consensus_votes": 58
+      "party_unity_pct": 99.38,
+      "partisan_votes": 800,
+      "consensus_loyalty_pct": 96.67,
+      "consensus_deviation_pct": 3.33,
+      "consensus_votes": 60
     },
     {
       "name": "JOHNSON, Ron",
@@ -7909,13 +7909,13 @@
       "state": "WI",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 17.07,
+      "independence_score": 16.52,
       "independence_label": "Frequent Dissenter",
       "party_unity_pct": 99.75,
-      "partisan_votes": 799,
-      "consensus_loyalty_pct": 66.1,
-      "consensus_deviation_pct": 33.9,
-      "consensus_votes": 59
+      "partisan_votes": 805,
+      "consensus_loyalty_pct": 67.21,
+      "consensus_deviation_pct": 32.79,
+      "consensus_votes": 61
     },
     {
       "name": "JUSTICE, James Conley, II",
@@ -7924,13 +7924,13 @@
       "state": "WV",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 1.03,
-      "independence_label": "Yes Man",
+      "independence_score": 0.99,
+      "independence_label": "Mindless Drone",
       "party_unity_pct": 99.87,
-      "partisan_votes": 776,
-      "consensus_loyalty_pct": 98.08,
-      "consensus_deviation_pct": 1.92,
-      "consensus_votes": 52
+      "partisan_votes": 782,
+      "consensus_loyalty_pct": 98.15,
+      "consensus_deviation_pct": 1.85,
+      "consensus_votes": 54
     },
     {
       "name": "KENNEDY, John Neely",
@@ -7939,13 +7939,13 @@
       "state": "LA",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 8.73,
+      "independence_score": 8.45,
       "independence_label": "Reluctant Rebel",
       "party_unity_pct": 99.5,
-      "partisan_votes": 793,
-      "consensus_loyalty_pct": 83.05,
-      "consensus_deviation_pct": 16.95,
-      "consensus_votes": 59
+      "partisan_votes": 799,
+      "consensus_loyalty_pct": 83.61,
+      "consensus_deviation_pct": 16.39,
+      "consensus_votes": 61
     },
     {
       "name": "LANKFORD, James",
@@ -7954,13 +7954,13 @@
       "state": "OK",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 2.71,
+      "independence_score": 2.62,
       "independence_label": "Yes Man",
       "party_unity_pct": 99.75,
-      "partisan_votes": 806,
-      "consensus_loyalty_pct": 94.83,
-      "consensus_deviation_pct": 5.17,
-      "consensus_votes": 58
+      "partisan_votes": 812,
+      "consensus_loyalty_pct": 95.0,
+      "consensus_deviation_pct": 5.0,
+      "consensus_votes": 60
     },
     {
       "name": "LEE, Mike",
@@ -7969,13 +7969,13 @@
       "state": "UT",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 21.51,
+      "independence_score": 20.81,
       "independence_label": "Rebellious Streak",
-      "party_unity_pct": 99.36,
-      "partisan_votes": 783,
-      "consensus_loyalty_pct": 57.63,
-      "consensus_deviation_pct": 42.37,
-      "consensus_votes": 59
+      "party_unity_pct": 99.37,
+      "partisan_votes": 789,
+      "consensus_loyalty_pct": 59.02,
+      "consensus_deviation_pct": 40.98,
+      "consensus_votes": 61
     },
     {
       "name": "LUMMIS, Cynthia M.",
@@ -7984,13 +7984,13 @@
       "state": "WY",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 9.55,
+      "independence_score": 9.23,
       "independence_label": "Reluctant Rebel",
       "party_unity_pct": 99.87,
-      "partisan_votes": 784,
-      "consensus_loyalty_pct": 81.03,
-      "consensus_deviation_pct": 18.97,
-      "consensus_votes": 58
+      "partisan_votes": 790,
+      "consensus_loyalty_pct": 81.67,
+      "consensus_deviation_pct": 18.33,
+      "consensus_votes": 60
     },
     {
       "name": "MARSHALL, Roger Wayne",
@@ -7999,13 +7999,13 @@
       "state": "KS",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 3.39,
+      "independence_score": 3.28,
       "independence_label": "Yes Man",
       "party_unity_pct": 100.0,
-      "partisan_votes": 803,
-      "consensus_loyalty_pct": 93.22,
-      "consensus_deviation_pct": 6.78,
-      "consensus_votes": 59
+      "partisan_votes": 809,
+      "consensus_loyalty_pct": 93.44,
+      "consensus_deviation_pct": 6.56,
+      "consensus_votes": 61
     },
     {
       "name": "MCCONNELL, Addison Mitchell (Mitch)",
@@ -8029,13 +8029,13 @@
       "state": "PA",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 2.61,
+      "independence_score": 2.52,
       "independence_label": "Yes Man",
       "party_unity_pct": 99.87,
-      "partisan_votes": 783,
-      "consensus_loyalty_pct": 94.92,
-      "consensus_deviation_pct": 5.08,
-      "consensus_votes": 59
+      "partisan_votes": 789,
+      "consensus_loyalty_pct": 95.08,
+      "consensus_deviation_pct": 4.92,
+      "consensus_votes": 61
     },
     {
       "name": "MOODY, Ashley Brooke",
@@ -8044,13 +8044,13 @@
       "state": "FL",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 6.73,
+      "independence_score": 6.5,
       "independence_label": "Reluctant Rebel",
       "party_unity_pct": 99.5,
-      "partisan_votes": 795,
-      "consensus_loyalty_pct": 87.04,
-      "consensus_deviation_pct": 12.96,
-      "consensus_votes": 54
+      "partisan_votes": 801,
+      "consensus_loyalty_pct": 87.5,
+      "consensus_deviation_pct": 12.5,
+      "consensus_votes": 56
     },
     {
       "name": "MORAN, Jerry",
@@ -8059,13 +8059,13 @@
       "state": "KS",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 4.17,
+      "independence_score": 4.05,
       "independence_label": "Yes Man",
-      "party_unity_pct": 98.55,
-      "partisan_votes": 761,
-      "consensus_loyalty_pct": 93.1,
-      "consensus_deviation_pct": 6.9,
-      "consensus_votes": 58
+      "party_unity_pct": 98.57,
+      "partisan_votes": 767,
+      "consensus_loyalty_pct": 93.33,
+      "consensus_deviation_pct": 6.67,
+      "consensus_votes": 60
     },
     {
       "name": "MORENO, Bernardo (Bernie)",
@@ -8074,13 +8074,13 @@
       "state": "OH",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 5.26,
+      "independence_score": 5.08,
       "independence_label": "Reluctant Rebel",
       "party_unity_pct": 100.0,
-      "partisan_votes": 806,
-      "consensus_loyalty_pct": 89.47,
-      "consensus_deviation_pct": 10.53,
-      "consensus_votes": 57
+      "partisan_votes": 812,
+      "consensus_loyalty_pct": 89.83,
+      "consensus_deviation_pct": 10.17,
+      "consensus_votes": 59
     },
     {
       "name": "MULLIN, Markwayne",
@@ -8104,13 +8104,13 @@
       "state": "AK",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 10.81,
+      "independence_score": 10.7,
       "independence_label": "Frequent Dissenter",
-      "party_unity_pct": 85.4,
-      "partisan_votes": 774,
-      "consensus_loyalty_pct": 92.98,
-      "consensus_deviation_pct": 7.02,
-      "consensus_votes": 57
+      "party_unity_pct": 85.38,
+      "partisan_votes": 780,
+      "consensus_loyalty_pct": 93.22,
+      "consensus_deviation_pct": 6.78,
+      "consensus_votes": 59
     },
     {
       "name": "PAUL, Rand",
@@ -8119,13 +8119,13 @@
       "state": "KY",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 33.06,
+      "independence_score": 33.85,
       "independence_label": "Lone Wolf",
-      "party_unity_pct": 88.27,
-      "partisan_votes": 767,
-      "consensus_loyalty_pct": 45.61,
-      "consensus_deviation_pct": 54.39,
-      "consensus_votes": 57
+      "party_unity_pct": 88.23,
+      "partisan_votes": 773,
+      "consensus_loyalty_pct": 44.07,
+      "consensus_deviation_pct": 55.93,
+      "consensus_votes": 59
     },
     {
       "name": "RICKETTS, John Peter (Pete)",
@@ -8137,10 +8137,10 @@
       "independence_score": 0.19,
       "independence_label": "Mindless Drone",
       "party_unity_pct": 99.63,
-      "partisan_votes": 802,
+      "partisan_votes": 807,
       "consensus_loyalty_pct": 100.0,
       "consensus_deviation_pct": 0.0,
-      "consensus_votes": 58
+      "consensus_votes": 60
     },
     {
       "name": "RISCH, James",
@@ -8149,13 +8149,13 @@
       "state": "ID",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 2.63,
+      "independence_score": 2.54,
       "independence_label": "Yes Man",
       "party_unity_pct": 100.0,
-      "partisan_votes": 786,
-      "consensus_loyalty_pct": 94.74,
-      "consensus_deviation_pct": 5.26,
-      "consensus_votes": 57
+      "partisan_votes": 792,
+      "consensus_loyalty_pct": 94.92,
+      "consensus_deviation_pct": 5.08,
+      "consensus_votes": 59
     },
     {
       "name": "ROUNDS, Marion Michael (Mike)",
@@ -8164,13 +8164,13 @@
       "state": "SD",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 1.35,
+      "independence_score": 1.32,
       "independence_label": "Yes Man",
-      "party_unity_pct": 99.0,
-      "partisan_votes": 801,
-      "consensus_loyalty_pct": 98.31,
-      "consensus_deviation_pct": 1.69,
-      "consensus_votes": 59
+      "party_unity_pct": 99.01,
+      "partisan_votes": 807,
+      "consensus_loyalty_pct": 98.36,
+      "consensus_deviation_pct": 1.64,
+      "consensus_votes": 61
     },
     {
       "name": "SCHMITT, Eric Stephen",
@@ -8179,13 +8179,13 @@
       "state": "MO",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 4.3,
+      "independence_score": 4.16,
       "independence_label": "Yes Man",
-      "party_unity_pct": 99.87,
-      "partisan_votes": 799,
-      "consensus_loyalty_pct": 91.53,
-      "consensus_deviation_pct": 8.47,
-      "consensus_votes": 59
+      "party_unity_pct": 99.88,
+      "partisan_votes": 805,
+      "consensus_loyalty_pct": 91.8,
+      "consensus_deviation_pct": 8.2,
+      "consensus_votes": 61
     },
     {
       "name": "SCOTT, Richard Lynn (Rick)",
@@ -8194,13 +8194,13 @@
       "state": "FL",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 18.04,
+      "independence_score": 17.46,
       "independence_label": "Frequent Dissenter",
-      "party_unity_pct": 99.5,
-      "partisan_votes": 807,
-      "consensus_loyalty_pct": 64.41,
-      "consensus_deviation_pct": 35.59,
-      "consensus_votes": 59
+      "party_unity_pct": 99.51,
+      "partisan_votes": 813,
+      "consensus_loyalty_pct": 65.57,
+      "consensus_deviation_pct": 34.43,
+      "consensus_votes": 61
     },
     {
       "name": "SCOTT, Tim",
@@ -8209,13 +8209,13 @@
       "state": "SC",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 0.97,
+      "independence_score": 0.94,
       "independence_label": "Mindless Drone",
       "party_unity_pct": 99.87,
-      "partisan_votes": 786,
-      "consensus_loyalty_pct": 98.18,
-      "consensus_deviation_pct": 1.82,
-      "consensus_votes": 55
+      "partisan_votes": 792,
+      "consensus_loyalty_pct": 98.25,
+      "consensus_deviation_pct": 1.75,
+      "consensus_votes": 57
     },
     {
       "name": "SHEEHY, Timothy Patrick",
@@ -8224,13 +8224,13 @@
       "state": "MT",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 1.85,
+      "independence_score": 1.79,
       "independence_label": "Yes Man",
       "party_unity_pct": 99.75,
-      "partisan_votes": 786,
-      "consensus_loyalty_pct": 96.55,
-      "consensus_deviation_pct": 3.45,
-      "consensus_votes": 58
+      "partisan_votes": 792,
+      "consensus_loyalty_pct": 96.67,
+      "consensus_deviation_pct": 3.33,
+      "consensus_votes": 60
     },
     {
       "name": "SULLIVAN, Daniel Scott",
@@ -8239,13 +8239,13 @@
       "state": "AK",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 4.57,
+      "independence_score": 4.47,
       "independence_label": "Yes Man",
-      "party_unity_pct": 95.94,
-      "partisan_votes": 789,
-      "consensus_loyalty_pct": 94.92,
-      "consensus_deviation_pct": 5.08,
-      "consensus_votes": 59
+      "party_unity_pct": 95.97,
+      "partisan_votes": 795,
+      "consensus_loyalty_pct": 95.08,
+      "consensus_deviation_pct": 4.92,
+      "consensus_votes": 61
     },
     {
       "name": "THUNE, John",
@@ -8254,13 +8254,13 @@
       "state": "SD",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 1.18,
+      "independence_score": 1.17,
       "independence_label": "Yes Man",
-      "party_unity_pct": 97.65,
-      "partisan_votes": 808,
+      "party_unity_pct": 97.67,
+      "partisan_votes": 814,
       "consensus_loyalty_pct": 100.0,
       "consensus_deviation_pct": 0.0,
-      "consensus_votes": 59
+      "consensus_votes": 61
     },
     {
       "name": "TILLIS, Thomas Roland (Thom)",
@@ -8269,13 +8269,13 @@
       "state": "NC",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 6.96,
+      "independence_score": 6.77,
       "independence_label": "Reluctant Rebel",
-      "party_unity_pct": 96.61,
-      "partisan_votes": 708,
-      "consensus_loyalty_pct": 89.47,
-      "consensus_deviation_pct": 10.53,
-      "consensus_votes": 57
+      "party_unity_pct": 96.63,
+      "partisan_votes": 713,
+      "consensus_loyalty_pct": 89.83,
+      "consensus_deviation_pct": 10.17,
+      "consensus_votes": 59
     },
     {
       "name": "TRUMP, Donald John",
@@ -8299,13 +8299,13 @@
       "state": "AL",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 9.78,
+      "independence_score": 9.45,
       "independence_label": "Reluctant Rebel",
       "party_unity_pct": 99.74,
-      "partisan_votes": 755,
-      "consensus_loyalty_pct": 80.7,
-      "consensus_deviation_pct": 19.3,
-      "consensus_votes": 57
+      "partisan_votes": 761,
+      "consensus_loyalty_pct": 81.36,
+      "consensus_deviation_pct": 18.64,
+      "consensus_votes": 59
     },
     {
       "name": "WICKER, Roger F.",
@@ -8314,13 +8314,13 @@
       "state": "MS",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 3.13,
+      "independence_score": 3.03,
       "independence_label": "Yes Man",
-      "party_unity_pct": 99.1,
-      "partisan_votes": 780,
-      "consensus_loyalty_pct": 94.64,
-      "consensus_deviation_pct": 5.36,
-      "consensus_votes": 56
+      "party_unity_pct": 99.11,
+      "partisan_votes": 786,
+      "consensus_loyalty_pct": 94.83,
+      "consensus_deviation_pct": 5.17,
+      "consensus_votes": 58
     },
     {
       "name": "YOUNG, Todd",
@@ -8329,13 +8329,13 @@
       "state": "IN",
       "chamber": "Senate",
       "district": null,
-      "independence_score": 8.01,
+      "independence_score": 7.75,
       "independence_label": "Reluctant Rebel",
       "party_unity_pct": 99.5,
-      "partisan_votes": 802,
-      "consensus_loyalty_pct": 84.48,
-      "consensus_deviation_pct": 15.52,
-      "consensus_votes": 58
+      "partisan_votes": 808,
+      "consensus_loyalty_pct": 85.0,
+      "consensus_deviation_pct": 15.0,
+      "consensus_votes": 60
     }
   ]
 }
