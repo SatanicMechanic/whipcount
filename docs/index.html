@@ -517,6 +517,73 @@
     min-width: 130px;
     padding-top: .1rem;
   }
+
+  /* ── Detail view ── */
+  #detail-view { display: none; }
+
+  .detail {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto 4rem;
+    padding: 2rem;
+  }
+
+  .back-link {
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    letter-spacing: .1em;
+    color: var(--accent);
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+  }
+
+  .back-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  .detail h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.5rem;
+    letter-spacing: .02em;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .detail-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    letter-spacing: .1em;
+    color: var(--muted);
+    margin-top: .5rem;
+  }
+
+  .detail-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1.75rem 0;
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+  }
+
+  .stat-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 1.25rem;
+    color: var(--text);
+  }
+
+  .stat-note { font-size: .7rem; color: var(--muted); margin-top: .35rem; }
+
+  .detail table { margin-top: .5rem; }
+  .detail td { white-space: normal; }
+  .detail .td-desc { color: #b0b0c0; max-width: 460px; }
+
+  tbody tr.clickable { cursor: pointer; }
 </style>
 </head>
 <body>
@@ -534,6 +601,7 @@
     </div>
   </header>
 
+  <div id="main-view">
   <div class="intro">
     <div class="intro-block">
       <h2>Welcome</h2>
@@ -637,6 +705,7 @@
           <th data-col="state">State <span class="sort-arrow">↕</span></th>
           <th data-col="chamber">Chamber <span class="sort-arrow">↕</span></th>
           <th data-col="independence_score" class="sorted">Independence Score <span class="sort-arrow">↓</span></th>
+          <th data-col="missed_pct">Missed % <span class="sort-arrow">↕</span></th>
           <th data-col="independence_label">Label <span class="sort-arrow">↕</span></th>
           <th data-col="party_unity_pct">Party Unity <span class="sort-arrow">↕</span></th>
           <th data-col="consensus_deviation_pct">Consensus Dev. <span class="sort-arrow">↕</span></th>
@@ -648,6 +717,9 @@
     </table>
     </div>
   </div>
+  </div>
+
+  <div id="detail-view" class="detail"></div>
 </div>
 
 <footer>
@@ -765,8 +837,9 @@ function filteredMembers() {
     return true;
   }).sort((a, b) => {
     let av = a[sortCol], bv = b[sortCol];
-    if (av == null) av = sortDir === 1 ? Infinity : -Infinity;
-    if (bv == null) bv = sortDir === 1 ? Infinity : -Infinity;
+    // sortDir -1 puts small values first here, so nulls go last in both directions
+    if (av == null) av = sortDir === 1 ? -Infinity : Infinity;
+    if (bv == null) bv = sortDir === 1 ? -Infinity : Infinity;
     if (typeof av === "string") return sortDir * av.localeCompare(bv);
     return sortDir * (bv - av);
   });
@@ -780,7 +853,7 @@ function renderTable() {
 
   const tbody = document.getElementById("tbody");
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="no-results">NO RESULTS</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="no-results">NO RESULTS</td></tr>`;
     return;
   }
 
@@ -789,7 +862,7 @@ function renderTable() {
     const col    = scoreColor(m.independence_score);
     const lbl    = m.independence_label || "—";
 
-    return `<tr>
+    return `<tr class="clickable" data-icpsr="${esc(m.icpsr)}">
       <td class="td-name">${esc(m.name)}</td>
       <td><span class="party-pill party-${esc(m.party)}">${esc(m.party)}</span></td>
       <td class="td-muted">${esc(m.state) || "—"}</td>
@@ -800,6 +873,7 @@ function renderTable() {
           <span class="score-num" style="color:${col}">${pct(m.independence_score)}</span>
         </div>
       </td>
+      <td class="td-muted">${pct(m.missed_pct)}</td>
       <td><span class="badge" style="background:${LABEL_BG[lbl]};color:${LABEL_COLORS[lbl]}">${lbl}</span></td>
       <td class="td-muted">${pct(m.party_unity_pct)}</td>
       <td class="td-muted">${pct(m.consensus_deviation_pct)}</td>
@@ -819,6 +893,79 @@ function updateSortHeaders() {
   });
 }
 
+async function renderDetail(icpsr) {
+  const el   = document.getElementById("detail-view");
+  const back = `<a class="back-link" href="#/">&larr; Back to all members</a>`;
+  const idx  = allMembers.find(m => String(m.icpsr) === icpsr);
+  el.innerHTML = back + `<div class="no-results">LOADING&hellip;</div>`;
+  window.scrollTo(0, 0);
+
+  let d;
+  try {
+    const res = await fetch(`members/${encodeURIComponent(icpsr)}.json`);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    d = await res.json();
+  } catch (err) {
+    console.error(err);
+    el.innerHTML = back + `<div class="no-results">NO DETAIL DATA FOR ICPSR ${esc(icpsr)} (${esc(err.message)})</div>`;
+    return;
+  }
+  if (location.hash !== `#/member/${icpsr}`) return; // stale response
+
+  const missed  = d.missed || {};
+  const unw     = idx && idx.party_unity_pct != null ? 100 - idx.party_unity_pct : null;
+  const wtd     = idx ? idx.weighted_partisan_deviation_pct : null;
+  const dissents = d.dissents || [];
+
+  const rows = dissents.map(v => `<tr>
+      <td class="td-muted">${esc(v.date)}</td>
+      <td class="td-muted">${esc(v.bill_number) || "—"}</td>
+      <td class="td-desc">${esc(v.vote_question) || "—"}<div class="stat-note">${esc(v.vote_desc)}</div></td>
+      <td class="td-muted">${esc(v.kind)}</td>
+      <td class="td-muted">${esc(v.member_vote)} vs ${esc(v.party_position)}</td>
+      <td class="td-muted">${esc(v.vote_result) || "—"}</td>
+    </tr>`).join("");
+
+  el.innerHTML = back + `
+    <h2>${esc(d.name)}</h2>
+    <div class="detail-sub">${esc(d.party)} · ${esc(d.state)} · ${esc(d.chamber)} · ICPSR ${esc(d.icpsr)}</div>
+    <div class="detail-stats">
+      <div class="stat">
+        <div class="card-label">Missed Votes</div>
+        <div class="stat-val">${missed.pct == null ? "—" : pct(missed.pct)}</div>
+        <div class="stat-note">${missed.missed ?? "—"} of ${missed.eligible ?? "—"} eligible</div>
+      </div>
+      <div class="stat">
+        <div class="card-label">Partisan Dev. (weighted)</div>
+        <div class="stat-val">${pct(wtd)}</div>
+        <div class="stat-note">cohesion-weighted</div>
+      </div>
+      <div class="stat">
+        <div class="card-label">Partisan Dev. (unweighted)</div>
+        <div class="stat-val">${pct(unw)}</div>
+        <div class="stat-note">100% &minus; party unity</div>
+      </div>
+      <div class="stat">
+        <div class="card-label">Dissenting Votes</div>
+        <div class="stat-val">${dissents.length}</div>
+        <div class="stat-note">most recent first</div>
+      </div>
+    </div>
+    ${dissents.length ? `<table>
+      <thead><tr>
+        <th>Date</th><th>Bill</th><th>Question</th><th>Kind</th><th>Vote vs Party</th><th>Result</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>` : `<div class="no-results">NO DISSENTING VOTES</div>`}`;
+}
+
+function route() {
+  const m = location.hash.match(/^#\/member\/(\d+)/);
+  document.getElementById("main-view").style.display   = m ? "none" : "block";
+  document.getElementById("detail-view").style.display = m ? "block" : "none";
+  if (m) renderDetail(m[1]);
+}
+
 async function init() {
   const res  = await fetch("data.json");
   const data = await res.json();
@@ -832,6 +979,13 @@ async function init() {
 
   renderSummaryCards(data.summary);
   renderTable();
+  route();
+  window.addEventListener("hashchange", route);
+
+  document.getElementById("tbody").addEventListener("click", e => {
+    const tr = e.target.closest("tr[data-icpsr]");
+    if (tr) location.hash = `#/member/${tr.dataset.icpsr}`;
+  });
 
   document.getElementById("loading").style.display = "none";
   document.getElementById("app").style.display     = "block";

@@ -25,12 +25,12 @@ jobs:
       - name: Validate script imports and syntax
         run: |
           python -c "
-          import ast, sys
-          with open('analyze_votes.py') as f:
-              src = f.read()
-          ast.parse(src)
+          import ast
+          ast.parse(open('analyze_votes.py').read())
           print('Syntax OK')
-          import pandas, requests
-          print(f'pandas {pandas.__version__} OK')
+          import requests
           print(f'requests {requests.__version__} OK')
           "
+
+      - name: Run self-check
+        run: python tests/test_scoring.py
