@@ -4,84 +4,124 @@ Congress 119 Voting Independence Index
 Downloads Voteview data, scores each member, outputs JSON for GitHub Pages site.
 """
 
+import csv
 import json
+import os
+from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
-
-import pandas as pd
-import requests
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 # ponytail: hardcoded for the 119th Congress (2025-2027); bump manually when it ends
 CONGRESS = 119
 VOTEVIEW_BASE = "https://voteview.com/static/data/out"
-DATA_DIR = Path("data")
-DATA_DIR.mkdir(exist_ok=True)
+# Point these at a fixture/scratch dir to run offline (tests/test_scoring.py does).
+DATA_DIR = Path(os.environ.get("VOTES_DATA_DIR", "data"))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+OFFLINE = "VOTES_DATA_DIR" in os.environ
 
-FILES = {
-    "H_votes":   f"{VOTEVIEW_BASE}/votes/H{CONGRESS}_votes.csv",
-    "S_votes":   f"{VOTEVIEW_BASE}/votes/S{CONGRESS}_votes.csv",
-    "H_members": f"{VOTEVIEW_BASE}/members/H{CONGRESS}_members.csv",
-    "S_members": f"{VOTEVIEW_BASE}/members/S{CONGRESS}_members.csv",
-}
+FILES = [
+    f"{VOTEVIEW_BASE}/{kind}/{ch}{CONGRESS}_{kind}.csv"
+    for kind in ("votes", "members", "rollcalls")
+    for ch in ("H", "S")
+]
+
+MIN_VOTES = 30       # exclude members with fewer than this many classified votes
+MAX_DISSENTS = 500   # per-member detail file cap
 
 # ── Download ───────────────────────────────────────────────────────────────────
 # ponytail: no local cache — CI checks out fresh and gitignores data/, so a
 # conditional-GET cache never survives between runs. Just fetch every time.
-def download(url, dest):
+if not OFFLINE:
+    import requests
+
+for url in [] if OFFLINE else FILES:
+    dest = DATA_DIR / Path(url).name
     r = requests.get(url, timeout=60)
     r.raise_for_status()
     dest.write_bytes(r.content)
     print(f"Downloaded: {url}")
 
-for key, url in FILES.items():
-    dest = DATA_DIR / Path(url).name
-    download(url, dest)
+def read_csv(name):
+    with open(DATA_DIR / name, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
 
-# ── Load ───────────────────────────────────────────────────────────────────────
-h_votes   = pd.read_csv(DATA_DIR / f"H{CONGRESS}_votes.csv")
-s_votes   = pd.read_csv(DATA_DIR / f"S{CONGRESS}_votes.csv")
-h_members = pd.read_csv(DATA_DIR / f"H{CONGRESS}_members.csv")
-s_members = pd.read_csv(DATA_DIR / f"S{CONGRESS}_members.csv")
+# ── Members ────────────────────────────────────────────────────────────────────
+# 100=D, 200=R, 328=Independent. Only Sanders and King caucus with the Democrats;
+# any other 328 (e.g. a mid-congress party switcher) gets no caucus and is unscored.
+CAUCUS        = {"100": "D", "200": "R"}
+DISPLAY_PARTY = {"100": "D", "200": "R", "328": "I"}
+DEM_CAUCUSING_INDEPENDENTS = {29147, 41300}  # Sanders (VT), King (ME)
 
-votes_all   = pd.concat([h_votes, s_votes],   ignore_index=True)
-members_all = pd.concat([h_members, s_members], ignore_index=True)
+members_all = {}
+for ch in ("H", "S"):
+    for m in read_csv(f"{ch}{CONGRESS}_members.csv"):
+        icpsr = int(m["icpsr"])
+        m["caucus"] = "D" if icpsr in DEM_CAUCUSING_INDEPENDENTS else CAUCUS.get(m["party_code"], "O")
+        m["display_party"] = DISPLAY_PARTY.get(m["party_code"], "O")
+        members_all[icpsr] = m
 
-# Keep only decisive votes (Yea=1, Nay=6)
-votes_all = votes_all[votes_all["cast_code"].isin([1, 6])].copy()
+# ── Votes ──────────────────────────────────────────────────────────────────────
+# cast_code: 0=not a member, 1-3=Yea, 4-6=Nay, 7-8=Present, 9=Not Voting.
+# Normalize the Yea/Nay families to 1/6 so comparisons are one equality test.
+def normalize(code):
+    if 1 <= code <= 3: return 1
+    if 4 <= code <= 6: return 6
+    return code
 
-# ── Party helpers ──────────────────────────────────────────────────────────────
-# 100=D, 200=R, 328=Independent (Sanders/King caucus with D)
-CAUCUS         = {100: "D", 200: "R", 328: "D"}
-DISPLAY_PARTY  = {100: "D", 200: "R", 328: "I"}
+# ponytail: whole file in memory — 119th is ~370k rows / ~25MB. Stream if a
+# future congress makes that hurt.
+votes = []           # (chamber, rollnumber, icpsr, cast) for decisive votes only
+eligible = Counter()  # icpsr -> rows where they were a member
+missed = Counter()    # icpsr -> present/not-voting
+for ch in ("H", "S"):
+    for v in read_csv(f"{ch}{CONGRESS}_votes.csv"):
+        code = normalize(int(v["cast_code"]))
+        if code == 0:
+            continue
+        icpsr = int(v["icpsr"])
+        eligible[icpsr] += 1
+        if code in (1, 6):
+            votes.append((v["chamber"], int(v["rollnumber"]), icpsr, code))
+        else:
+            missed[icpsr] += 1
 
-members_all["party"]         = members_all["party_code"].map(CAUCUS).fillna("O")
-members_all["display_party"] = members_all["party_code"].map(DISPLAY_PARTY).fillna("O")
+# ── Rollcall context ───────────────────────────────────────────────────────────
+rollcalls = {}
+for ch in ("H", "S"):
+    for r in read_csv(f"{ch}{CONGRESS}_rollcalls.csv"):
+        rollcalls[(r["chamber"], int(r["rollnumber"]))] = {
+            "date": r["date"],
+            "bill_number": r["bill_number"],
+            "vote_question": r["vote_question"],
+            "vote_desc": r["vote_desc"][:240],
+            "vote_result": r["vote_result"],
+        }
 
-# ── Party majority position per vote ──────────────────────────────────────────
-party_map = members_all.set_index("icpsr")["party"].to_dict()
-votes_all["party"] = votes_all["icpsr"].map(party_map)
+# ── Party majority position + cohesion weight per rollcall ─────────────────────
+# tally[(chamber, rollnumber)][party] = Counter of normalized cast codes
+tally = defaultdict(lambda: {"D": Counter(), "R": Counter()})
+for chamber, roll, icpsr, code in votes:
+    m = members_all.get(icpsr)
+    if m and m["caucus"] in ("D", "R"):
+        tally[(chamber, roll)][m["caucus"]][code] += 1
 
-vote_party = votes_all[votes_all["party"].isin(["D", "R"])].copy()
-
-def majority_pos(s):
-    c = s.value_counts()
-    return c.idxmax() if len(c) else None
-
-party_positions = (
-    vote_party
-    .groupby(["chamber", "rollnumber", "party"])["cast_code"]
-    .agg(majority_pos)
-    .unstack("party")
-    .reset_index()
-)
-party_positions.columns = ["chamber", "rollnumber", "D_pos", "R_pos"]
-party_positions = party_positions.dropna(subset=["D_pos", "R_pos"])
-party_positions["vote_type"] = party_positions.apply(
-    lambda r: "consensus" if r["D_pos"] == r["R_pos"] else "partisan", axis=1
-)
-
-votes_merged = votes_all.merge(party_positions, on=["chamber", "rollnumber"], how="inner")
+# rollcall -> {"D_pos","R_pos","D_weight","R_weight","vote_type"}
+positions = {}
+for key, parties in tally.items():
+    info = {}
+    for p, counts in parties.items():
+        if not counts:
+            break
+        # tie-break to Yea so the result is deterministic, not dict-order luck
+        pos = max((1, 6), key=lambda c: (counts[c], c == 1))
+        # cohesion: 0.0 at a 50/50 party split, 1.0 at unanimous
+        info[f"{p}_pos"] = pos
+        info[f"{p}_weight"] = (counts[pos] / sum(counts.values()) - 0.5) * 2
+    if len(info) != 4:
+        continue  # a party cast no decisive votes on this rollcall — unclassifiable
+    info["vote_type"] = "consensus" if info["D_pos"] == info["R_pos"] else "partisan"
+    positions[key] = info
 
 # ── Label ──────────────────────────────────────────────────────────────────────
 # (threshold, label) pairs, ascending — mirrors LABELS/scoreColor in docs/index.html
@@ -101,54 +141,91 @@ def independence_label(score_pct):
         if s < threshold:
             return label
 
+def pct(x):
+    return round(x * 100, 2) if x is not None else None
+
 # ── Score each member ──────────────────────────────────────────────────────────
+by_member = defaultdict(list)
+for chamber, roll, icpsr, code in votes:
+    if (chamber, roll) in positions:
+        by_member[icpsr].append((chamber, roll, code))
+
 records = []
-for icpsr, grp in votes_merged.groupby("icpsr"):
-    mrow = members_all[members_all["icpsr"] == icpsr]
-    if mrow.empty: continue
-    mrow = mrow.iloc[0]
+dissents_by_member = {}
+for icpsr, cast in by_member.items():
+    m = members_all.get(icpsr)
+    if not m or m["caucus"] not in ("D", "R"):
+        continue
+    if len(cast) < MIN_VOTES:
+        continue
+    party = m["caucus"]
 
-    party = mrow["party"]
-    disp  = mrow["display_party"]
-    if party not in ("D", "R"): continue
+    n_part = n_defect = 0          # unweighted partisan (party_unity_pct, back-compat)
+    w_total = w_defect = 0.0       # cohesion-weighted partisan
+    n_cons = n_cons_defect = 0
+    dissents = []
 
-    n_total = len(grp)
-    if n_total < 30: continue  # exclude members with fewer than 30 recorded votes
+    for chamber, roll, code in cast:
+        info = positions[(chamber, roll)]
+        partisan = info["vote_type"] == "partisan"
+        pos = info[f"{party}_pos"] if partisan else info["D_pos"]
+        weight = info[f"{party}_weight"] if partisan else 1.0
+        defected = code != pos
 
-    pp_col = f"{party}_pos"
+        if partisan:
+            n_part += 1
+            w_total += weight
+            if defected:
+                n_defect += 1
+                w_defect += weight
+        else:
+            n_cons += 1
+            if defected:
+                n_cons_defect += 1
 
-    partisan  = grp[grp["vote_type"] == "partisan"]
-    n_part    = len(partisan)
-    party_unity = (partisan["cast_code"] == partisan[pp_col]).sum() / n_part if n_part else None
+        if defected:
+            dissents.append({
+                **rollcalls.get((chamber, roll), {}),
+                "chamber": chamber,
+                "rollnumber": roll,
+                "kind": "partisan" if partisan else "consensus",
+                "member_vote": "Yea" if code == 1 else "Nay",
+                "party_position": "Yea" if pos == 1 else "Nay",
+                "weight": round(weight, 4),
+            })
 
-    consensus = grp[grp["vote_type"] == "consensus"]
-    n_cons    = len(consensus)
-    cons_loy  = (consensus["cast_code"] == consensus["D_pos"]).sum() / n_cons if n_cons else None
-    cons_dev  = (1 - cons_loy) if cons_loy is not None else None
+    party_unity = 1 - n_defect / n_part if n_part else None
+    p_dev = w_defect / w_total if w_total else None
+    cons_loy = 1 - n_cons_defect / n_cons if n_cons else None
+    c_dev = (1 - cons_loy) if cons_loy is not None else None
 
-    p_dev = (1 - party_unity) if party_unity is not None else None
-    c_dev = cons_dev
     if   p_dev is not None and c_dev is not None: ind = (p_dev + c_dev) / 2
-    elif p_dev is not None:                        ind = p_dev
-    elif c_dev is not None:                        ind = c_dev
-    else:                                          ind = None
+    elif p_dev is not None:                       ind = p_dev
+    else:                                         ind = c_dev
 
-    ind_pct = round(ind * 100, 2) if ind is not None else None
+    dissents.sort(key=lambda d: d.get("date", ""), reverse=True)
+    dissents_by_member[icpsr] = dissents
 
     records.append({
-        "name":                mrow["bioname"],
-        "party":               disp,
+        "icpsr":               icpsr,
+        "name":                m["bioname"],
+        "party":               m["display_party"],
         "caucus":              party,
-        "state":               mrow["state_abbrev"],
-        "chamber":             "House" if mrow["chamber"] == "House" else "Senate",
-        "district":            int(mrow["district_code"]) if mrow["chamber"] == "House" else None,
-        "independence_score":  ind_pct,
-        "independence_label":  independence_label(ind_pct) if ind_pct is not None else None,
-        "party_unity_pct":     round(party_unity * 100, 2) if party_unity is not None else None,
+        "state":               m["state_abbrev"],
+        "chamber":             m["chamber"],
+        "district":            int(m["district_code"]) if m["chamber"] == "House" else None,
+        "independence_score":  pct(ind),
+        "independence_label":  independence_label(ind * 100) if ind is not None else None,
+        "party_unity_pct":     pct(party_unity),
+        "weighted_partisan_deviation_pct": pct(p_dev),
         "partisan_votes":      n_part,
-        "consensus_loyalty_pct": round(cons_loy * 100, 2) if cons_loy is not None else None,
-        "consensus_deviation_pct": round(cons_dev * 100, 2) if cons_dev is not None else None,
+        "consensus_loyalty_pct":   pct(cons_loy),
+        "consensus_deviation_pct": pct(c_dev),
         "consensus_votes":     n_cons,
+        "eligible_votes":      eligible[icpsr],
+        "missed_votes":        missed[icpsr],
+        "missed_pct":          pct(missed[icpsr] / eligible[icpsr]) if eligible[icpsr] else None,
+        "dissent_count":       len(dissents),
     })
 
 members = sorted(records, key=lambda r: (r["chamber"], r["party"], r["name"]))
@@ -157,11 +234,13 @@ members = sorted(records, key=lambda r: (r["chamber"], r["party"], r["name"]))
 def group_stats(subset):
     scores = [r["independence_score"] for r in subset if r["independence_score"] is not None]
     if not scores: return {}
+    missed_pcts = [r["missed_pct"] for r in subset if r["missed_pct"] is not None]
     return {
         "count":      len(subset),
         "avg_independence": round(sum(scores) / len(scores), 2),
         "min_independence": round(min(scores), 2),
         "max_independence": round(max(scores), 2),
+        "avg_missed_pct": round(sum(missed_pcts) / len(missed_pcts), 2) if missed_pcts else None,
         "label_dist": {
             label: sum(1 for r in subset if r["independence_label"] == label)
             for label in LABELS
@@ -179,16 +258,48 @@ summary = {
 }
 
 # ── Write JSON ─────────────────────────────────────────────────────────────────
+now = datetime.now(timezone.utc)
 output = {
-    "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "updated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
     "congress":   CONGRESS,
     "summary":    summary,
     "members":    members,
 }
 
-out_path = Path("docs/data.json")
-out_path.parent.mkdir(exist_ok=True)
-out_path.write_text(json.dumps(output, indent=2))
+docs = Path(os.environ.get("VOTES_OUT_DIR", "docs"))
+docs.mkdir(parents=True, exist_ok=True)
+(docs / "data.json").write_text(json.dumps(output, indent=2))
 
-print(f"✓ Wrote {len(members)} members to {out_path}")
+# Per-member detail
+member_dir = docs / "members"
+member_dir.mkdir(parents=True, exist_ok=True)
+for stale in member_dir.glob("*.json"):
+    stale.unlink()  # a member can drop out (party switch, resignation)
+for r in members:
+    (member_dir / f"{r['icpsr']}.json").write_text(json.dumps({
+        "icpsr": r["icpsr"], "name": r["name"], "party": r["party"],
+        "state": r["state"], "chamber": r["chamber"],
+        "dissents": dissents_by_member[r["icpsr"]][:MAX_DISSENTS],
+        "missed": {"eligible": r["eligible_votes"], "missed": r["missed_votes"],
+                   "pct": r["missed_pct"]},
+    }))
+
+# History snapshot — one per UTC day, overwritten on re-run
+hist_dir = docs / "history"
+hist_dir.mkdir(parents=True, exist_ok=True)
+today = now.strftime("%Y-%m-%d")
+(hist_dir / f"{today}.json").write_text(json.dumps({
+    "date": today,
+    "updated_at": output["updated_at"],
+    "congress": CONGRESS,
+    "summary": summary,
+    "members": [{k: r[k] for k in
+                 ("icpsr", "name", "party", "chamber", "independence_score", "missed_pct")}
+                for r in members],
+}, indent=2))
+(hist_dir / "index.json").write_text(json.dumps(
+    sorted(p.stem for p in hist_dir.glob("*.json") if p.name != "index.json")))
+
+print(f"✓ Wrote {len(members)} members to {docs / 'data.json'}")
+print(f"  Per-member files: {len(members)} · History snapshot: {today}")
 print(f"  Updated: {output['updated_at']}")

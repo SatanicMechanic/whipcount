@@ -12,6 +12,8 @@ jobs:
       contents: write
 
     steps:
+      # docs/history/ is tracked on main, so the checkout already carries every
+      # prior snapshot forward. The script globs that dir to rebuild index.json.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -23,13 +25,39 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run scoring script
-        run: python analyze_votes.py
+      - name: Self-check
+        run: python3 tests/test_scoring.py
 
-      - name: Commit updated data
+      - name: Run scoring script
+        run: python3 analyze_votes.py
+
+      # Snapshots are the one output that cannot be regenerated, so they get
+      # real history on main. Bulk data (data.json, members/) is gitignored.
+      - name: Commit history snapshot
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/data.json
-          git diff --staged --quiet || git commit -m "Update voting index $(date -u '+%Y-%m-%d')"
-          git push
+          git add docs/history
+          if git diff --staged --quiet; then
+            echo "No snapshot change"
+          else
+            git commit -m "History snapshot $(date -u '+%Y-%m-%d')"
+            git pull --rebase --autostash
+            git push
+          fi
+
+      # docs/ is the whole published site. Force-pushed as a fresh single commit
+      # so regenerated bulk data never accumulates anywhere.
+      - name: Publish site branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd docs
+          git init -q -b site
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Site build $(date -u '+%Y-%m-%d')"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push -f -q origin site
+          echo "Pushed $(git ls-files | wc -l) files to site branch"
