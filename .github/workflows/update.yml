@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write      # to report upstream schema drift
 
     steps:
       # docs/history/ is tracked on main, so the checkout already carries every
@@ -26,10 +27,32 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Self-check
-        run: python3 tests/test_scoring.py
+        run: |
+          python3 tests/test_scoring.py
+          node tests/test_site.mjs
 
       - name: Run scoring script
         run: python3 analyze_votes.py
+
+      # Voteview can change its files under us. analyze_votes.py writes
+      # schema-drift.txt when it sees a column or value it doesn't recognise —
+      # and deletes it on a clean run, so a fixed problem stops nagging. Runs on
+      # failure too: a dropped column stops the build and still writes a report.
+      - name: Report upstream schema drift
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -s schema-drift.txt ] || exit 0
+          title="Voteview schema drift"
+          body=$(printf 'The weekly build saw upstream data it did not expect.\n\n```\n%s\n```\n\n[Run log](%s/%s/actions/runs/%s)' \
+                 "$(cat schema-drift.txt)" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")
+          existing=$(gh issue list --state open --search "$title in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi
 
       # Snapshots are the one output that cannot be regenerated, so they get
       # real history on main. Bulk data (data.json, members/) is gitignored.

@@ -7,3 +7,6 @@ __pycache__/
 # docs/history/ is NOT ignored — snapshots are committed to main as the durable copy
 docs/data.json
 docs/members/
+
+# upstream schema drift report, consumed by CI
+schema-drift.txt
