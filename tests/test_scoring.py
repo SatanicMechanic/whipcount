@@ -45,8 +45,11 @@ def build_fixture(data_dir):
         w = csv.writer(f)
         w.writerow(["congress", "chamber", "icpsr", "district_code", "state_abbrev",
                     "party_code", "bioname"])
+        # Distinct surnames: the Speaker is matched from the election rollcall by
+        # "Surname (ST)", so a fixture where everyone shares one would only ever
+        # exercise the ambiguity guard.
         for i in DEMS + REPS:
-            w.writerow([119, "House", i, i, "CA", 100 if i in DEMS else 200, f"MEMBER, No{i}"])
+            w.writerow([119, "House", i, i, "CA", 100 if i in DEMS else 200, f"MEMBER{i}, No{i}"])
         w.writerow([119, "President", PRESIDENT, 0, "USA", 200, "PRESIDENT, Fake"])
         w.writerow([119, "House", DELEGATE, 0, "GU", 200, "DELEGATE, Fake"])
 
@@ -55,8 +58,15 @@ def build_fixture(data_dir):
         w.writerow(["congress", "chamber", "rollnumber", "date", "bill_number",
                     "vote_result", "vote_desc", "vote_question"])
         for n in range(1, 41):
-            w.writerow([119, "House", n, f"2025-01-{n:02d}", f"HR{n}", "Passed",
-                        "x" * 300, "On Passage"])
+            # Rolls 1 and 20 are Speaker elections — the later one must win, the
+            # way 2023's McCarthy-to-Johnson change resolves without an edit.
+            if n in (1, 20):
+                w.writerow([119, "House", n, f"2025-01-{n:02d}", "",
+                            f"MEMBER{6 if n == 1 else 7} (CA)", "x" * 300,
+                            "Election of the Speaker"])
+            else:
+                w.writerow([119, "House", n, f"2025-01-{n:02d}", f"HR{n}", "Passed",
+                            "x" * 300, "On Passage"])
 
     rows = []
     for n in range(1, 21):                       # unanimous-ish partisan
@@ -114,6 +124,7 @@ def check_congress_rollover(data_dir, out_dir):
     """
     os.environ.update(VOTES_OFFLINE="1", VOTES_CONGRESS="119",
                       VOTES_DATA_DIR=str(data_dir), VOTES_OUT_DIR=str(out_dir))
+    sys.dont_write_bytecode = True   # don't leave a __pycache__ entry behind
     sys.path.insert(0, str(ROOT))
     from importlib import import_module
     congress_on = import_module("analyze_votes").congress_on
@@ -182,6 +193,45 @@ def check_schema_drift(tmp):
     assert code == 0, "an unknown chamber should still publish"
     assert "chamber 'Territory'" in report and "party_code '999'" in report, report
 
+    # A Speaker we can't match to exactly one member must be reported, not
+    # guessed at and not fatal — the rest of the index is still correct.
+    def unmatchable_speaker(d):
+        rewrite(d / "H119_rollcalls.csv",
+                lambda ls: [ls[0]] + [l.replace("MEMBER7 (CA)", "NOBODY (ZZ)") for l in ls[1:]])
+    code, report = run_script(fixture(unmatchable_speaker), tmp / "o5", tmp / "r5.txt")
+    assert code == 0, "an unmatchable Speaker should still publish"
+    assert "Speaker" in report and "NOBODY (ZZ)" in report, report
+
+    # One unreadable snapshot must not brick every future build. index.json is
+    # rebuilt from the whole archive on each run, before the workflow commits, so
+    # an unguarded raise here would fail identically every week.
+    d = tmp / "corrupt"; d.mkdir(); build_fixture(d)
+    out = tmp / "o6"; (out / "history").mkdir(parents=True)
+    (out / "history" / "2020-01-01.json").write_text("{ not json")
+    (out / "history" / "2020-01-02.json").write_text('{"date": "2020-01-02"}')   # no congress
+    code, report = run_script(d, out, tmp / "r6.txt")
+    assert code == 0, "a corrupt snapshot must not stop the build"
+    index = json.loads((out / "history" / "index.json").read_text())
+    assert all(e["congress"] == 119 for e in index), index
+    assert len(index) == 1, f"only today's good snapshot belongs in the index: {index}"
+    assert "2020-01-01.json" in report and "2020-01-02.json" in report, report
+
+    # Drift is one line per distinct value, not per row: a whole cast_code family
+    # changing would otherwise emit hundreds of thousands of lines.
+    def many_bad_codes(d):
+        def fn(ls):
+            out = [ls[0]]
+            for l in ls[1:]:
+                f = l.split(",")
+                f[4] = "11"          # same unknown code on every single row
+                out.append(",".join(f))
+            return out
+        rewrite(d / "H119_votes.csv", fn)
+    code, report = run_script(fixture(many_bad_codes), tmp / "o7", tmp / "r7.txt")
+    assert code == 0
+    hits = [l for l in report.splitlines() if "cast_code 11" in l]
+    assert len(hits) == 1, f"expected one line for the code, got {len(hits)}"
+
     # A clean run must clear a stale report, or CI reopens an issue forever.
     d = tmp / "clean"; d.mkdir(); build_fixture(d)
     stale = tmp / "r4.txt"
@@ -193,6 +243,71 @@ def check_schema_drift(tmp):
 check_schema_drift.n = iter(range(100))
 
 
+SWITCHER = 60
+
+
+def check_chamber_switcher(tmp):
+    """A member serving in both chambers in one Congress.
+
+    Rollnumbers restart per chamber, so a single span per member would mix the
+    two numbering schemes while cast_count summed across both — driving
+    missed = eligible - cast_count negative. Unreachable in the 119th (no icpsr
+    votes in both chambers), so this fixture is the only thing that proves the
+    per-(member, chamber) spans work at all.
+    """
+    d = tmp / "switch"; d.mkdir()
+    build_fixture(d)                      # House: members 1-13, 40 rollcalls
+
+    # Put the switcher in both chambers' member files, voting every rollcall.
+    with open(d / "H119_members.csv", "a", newline="") as f:
+        csv.writer(f).writerow([119, "House", SWITCHER, 1, "CA", 100, "SWITCHER, Pat"])
+    with open(d / "H119_votes.csv", "a", newline="") as f:
+        w = csv.writer(f)
+        for n in range(1, 41):
+            w.writerow([119, "House", n, SWITCHER, 1])
+
+    # A real Senate: 2 D, 2 R over 40 partisan rollcalls, plus the switcher.
+    with open(d / "S119_members.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["congress", "chamber", "icpsr", "district_code", "state_abbrev",
+                    "party_code", "bioname"])
+        for i, party in ((51, 100), (52, 100), (53, 200), (54, 200)):
+            w.writerow([119, "Senate", i, 0, "NY", party, f"SENATOR{i}, No{i}"])
+        w.writerow([119, "Senate", SWITCHER, 0, "CA", 100, "SWITCHER, Pat"])
+    with open(d / "S119_rollcalls.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["congress", "chamber", "rollnumber", "date", "bill_number",
+                    "vote_result", "vote_desc", "vote_question"])
+        for n in range(1, 41):
+            w.writerow([119, "Senate", n, f"2025-02-{n % 28 + 1:02d}", f"S{n}",
+                        "Passed", "x" * 50, "On Passage"])
+    with open(d / "S119_votes.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["congress", "chamber", "rollnumber", "icpsr", "cast_code"])
+        for n in range(1, 41):
+            for i in (51, 52, SWITCHER):
+                w.writerow([119, "Senate", n, i, 1])
+            for i in (53, 54):
+                w.writerow([119, "Senate", n, i, 6])
+
+    code, _ = run_script(d, tmp / "osw", tmp / "rsw.txt")
+    assert code == 0
+    members = {m["icpsr"]: m for m in
+               json.loads((tmp / "osw" / "data.json").read_text())["members"]}
+
+    # The invariant that used to break: you cannot miss votes you never cast.
+    for m in members.values():
+        assert m["missed_votes"] >= 0, f"{m['name']}: missed {m['missed_votes']}"
+        assert m["missed_votes"] <= m["eligible_votes"], m["name"]
+
+    # 40 House + 40 Senate rollcalls, present for all of them. Keyed by icpsr
+    # alone this read 40 eligible against 80 cast — missed of -40.
+    sw = members[SWITCHER]
+    assert sw["eligible_votes"] == 80, sw["eligible_votes"]
+    assert sw["missed_votes"] == 0, sw["missed_votes"]
+    assert sw["missed_pct"] == 0.0
+
+
 def main():
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
@@ -201,6 +316,7 @@ def main():
         build_fixture(data_dir)
         check_congress_rollover(data_dir, tmp / "import_out")
         check_schema_drift(tmp)
+        check_chamber_switcher(tmp)
 
         # VOTES_CONGRESS pins the fixture's Congress. Without it the script
         # derives one from today's date and this test would start looking for
@@ -274,12 +390,16 @@ def main():
         assert data["summary"]["all"]["avg_missed_pct"] == round(15.0 / 13, 2)
 
         # ── leadership flag ───────────────────────────────────────────────────
-        # No fixture icpsr is in LEADERSHIP, so every member carries None and
-        # nobody is dropped for it — the flag never filters the index.
-        assert all("leadership" in m for m in data["members"])
-        assert all(m["leadership"] is None for m in data["members"])
+        # The Speaker is read off the floor vote, not a hand-kept table, so a
+        # mid-Congress replacement needs no edit: roll 20 beats roll 1.
+        assert by_icpsr[7]["leadership"] == "Speaker", by_icpsr[7]["leadership"]
+        assert by_icpsr[6]["leadership"] is None, "the ousted Speaker must not keep the badge"
         assert json.loads(
-            (out_dir / "members" / "11.json").read_text())["leadership"] is None
+            (out_dir / "members" / "7.json").read_text())["leadership"] == "Speaker"
+        # No fixture icpsr is in LEADERSHIP_BY_CONGRESS, so the conference-elected
+        # posts are all None — the flag never filters anyone out of the index.
+        assert all("leadership" in m for m in data["members"])
+        assert sum(m["leadership"] is not None for m in data["members"]) == 1
 
         # ── label thresholds (boundaries are exclusive-below) ─────────────────
         assert by_icpsr[1]["independence_score"] == 0.0

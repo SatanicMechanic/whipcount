@@ -92,11 +92,21 @@ KNOWN_CHAMBERS = {"House", "Senate", "President"}
 KNOWN_CAST_CODES = set(range(10))   # 0 not a member · 1-6 Yea/Nay · 7-8 Present · 9 Not Voting
 KNOWN_PARTY_CODES = {"100", "200", "328"}
 SCHEMA_REPORT = Path(os.environ.get("VOTES_SCHEMA_REPORT", "schema-drift.txt"))
+MAX_DRIFT_LINES = 25   # backstop: an issue body has a size limit, and so does a reader
 drift = []
+drift_keys = set()
 
 
-def note_drift(msg):
-    if msg not in drift:
+def note_drift(key, msg):
+    """Record one line per distinct `key`, keeping the first example seen.
+
+    Keyed rather than deduped by message text: the messages carry an example
+    rollcall or member, so a whole cast_code family changing would otherwise
+    emit a line per row — hundreds of thousands of them, each costing a linear
+    scan of the list, and an issue body far past GitHub's limit.
+    """
+    if key not in drift_keys:
+        drift_keys.add(key)
         drift.append(msg)
 
 
@@ -140,13 +150,16 @@ DELEGATE_STATES = {"DC", "PR", "VI", "GU", "AS", "MP"}
 # loyalty to their own agenda. Flagged rather than excluded — they are the first
 # names a reader looks up.
 #
+# The Speaker is NOT here: it is elected on the floor, so it comes out of the
+# rollcall data further down. These are the posts both parties fill in closed
+# conference and caucus meetings, which produce no vote for Voteview to record.
+#
 # Keyed by Congress on purpose. ICPSR numbers follow the person, not the post, so
-# carrying this table forward would label the 119th's Speaker "Speaker" for the
-# rest of his career. An unlisted Congress flags nobody and says so at the end of
-# the build — a missing badge is recoverable, a wrong one is a false claim.
+# carrying this table forward would label the 119th's whip "Whip" for the rest of
+# his career. An unlisted Congress flags nobody and says so at the end of the
+# build — a missing badge is recoverable, a wrong one is a false claim.
 LEADERSHIP_BY_CONGRESS = {
     119: {
-        21727: "Speaker",          # Johnson (R-LA)
         20759: "Majority Leader",  # Scalise (R-LA)
         21531: "Majority Whip",    # Emmer (R-MN)
         21343: "Minority Leader",  # Jeffries (D-NY)
@@ -167,10 +180,12 @@ for ch in ("H", "S"):
         # cast_code rows under chamber "President". They are not votes: drop the
         # row so they reach neither the party cohesion tally nor the index.
         if m["chamber"] not in KNOWN_CHAMBERS:
-            note_drift(f"members: unrecognised chamber {m['chamber']!r} "
+            note_drift(("chamber", m["chamber"]),
+                       f"members: unrecognised chamber {m['chamber']!r} "
                        f"(e.g. {m['bioname']}) — skipped")
         if m["party_code"] not in KNOWN_PARTY_CODES:
-            note_drift(f"members: unrecognised party_code {m['party_code']!r} "
+            note_drift(("party_code", m["party_code"]),
+                       f"members: unrecognised party_code {m['party_code']!r} "
                        f"(e.g. {m['bioname']}) — member left unscored")
         if m["chamber"] not in ("House", "Senate"):
             continue
@@ -194,8 +209,12 @@ def normalize(code):
 # future congress makes that hurt.
 votes = []                     # (chamber, rollnumber, icpsr, cast) — decisive only
 rolls_seen = defaultdict(set)  # chamber -> every rollnumber it held
-span = {}                      # icpsr -> [chamber, first roll, last roll] on record
-cast_count = Counter()         # icpsr -> decisive votes actually cast
+# Keyed by (icpsr, chamber), not icpsr: rollnumbers restart per chamber, so a
+# member who serves in both during one Congress (a House member appointed to a
+# Senate vacancy) would otherwise get a span mixing the two numbering schemes and
+# a cast_count spanning both — making missed = eligible - cast_count negative.
+span = {}                      # (icpsr, chamber) -> [first roll, last roll]
+cast_count = Counter()         # (icpsr, chamber) -> decisive votes actually cast
 
 for ch in ("H", "S"):
     for v in read_csv(f"{ch}{CONGRESS}_votes.csv", "votes"):
@@ -205,19 +224,21 @@ for ch in ("H", "S"):
         if raw not in KNOWN_CAST_CODES:
             # normalize() passes an unknown code straight through, where it lands
             # in the "missed" bucket. Silent miscounting is the failure to catch.
-            note_drift(f"votes: unrecognised cast_code {raw} "
-                       f"({chamber} rollcall {roll}) — counted as a missed vote")
+            note_drift(("cast_code", raw),
+                       f"votes: unrecognised cast_code {raw} "
+                       f"(e.g. {chamber} rollcall {roll}) — counted as a missed vote")
         code = normalize(raw)
         if code == 0:
             continue
         icpsr = int(v["icpsr"])
-        if icpsr in span:
-            s = span[icpsr]
-            s[1], s[2] = min(s[1], roll), max(s[2], roll)
+        key = (icpsr, chamber)
+        if key in span:
+            s = span[key]
+            s[0], s[1] = min(s[0], roll), max(s[1], roll)
         else:
-            span[icpsr] = [chamber, roll, roll]
+            span[key] = [roll, roll]
         if code in (1, 6):
-            cast_count[icpsr] += 1
+            cast_count[key] += 1
             votes.append((chamber, roll, icpsr, code))
 
 # Attendance denominator: every rollcall the chamber held between a member's
@@ -230,9 +251,12 @@ for ch in ("H", "S"):
 # stretch fall outside the span, undercounting their misses by those few votes.
 eligible = Counter()  # icpsr -> rollcalls held while they served
 missed = Counter()    # icpsr -> those with no Yea/Nay recorded
-for icpsr, (chamber, first, last) in span.items():
-    eligible[icpsr] = sum(1 for r in rolls_seen[chamber] if first <= r <= last)
-    missed[icpsr] = eligible[icpsr] - cast_count[icpsr]
+for (icpsr, chamber), (first, last) in span.items():
+    # Summed across chambers, so a member who switched mid-Congress is measured
+    # against each chamber's own rollcalls over the stretch they served in it.
+    held = sum(1 for r in rolls_seen[chamber] if first <= r <= last)
+    eligible[icpsr] += held
+    missed[icpsr] += held - cast_count[(icpsr, chamber)]
 
 # ── Rollcall context ───────────────────────────────────────────────────────────
 rollcalls = {}
@@ -245,6 +269,34 @@ for ch in ("H", "S"):
             "vote_desc": r["vote_desc"][:240],
             "vote_result": r["vote_result"],
         }
+
+# ── Speaker, derived from the floor ────────────────────────────────────────────
+# The Speaker is the one leadership post decided by a recorded vote, so Voteview
+# already has it: vote_question "Election of the Speaker", winner in vote_result
+# as "Surname (ST)". Taking the latest such vote also makes a mid-Congress change
+# — 2023's McCarthy to Johnson — resolve itself with no edit.
+#
+# Floor leaders and whips are not derivable at any price: both parties choose
+# them in closed conference and caucus meetings that never reach a rollcall.
+# There is exactly one "Election of the Speaker" question in the 119th and no
+# Senate equivalent, so those eight stay in LEADERSHIP_BY_CONGRESS by hand.
+SPEAKER_QUESTION = "Election of the Speaker"
+elections = sorted((r["date"], r["vote_result"]) for r in rollcalls.values()
+                   if r["vote_question"] == SPEAKER_QUESTION)
+if elections:
+    won = elections[-1][1]                       # most recent election wins
+    surname, _, state = won.partition(" (")
+    hits = [i for i, m in members_all.items()
+            if m["chamber"] == "House" and m["state_abbrev"] == state.rstrip(")")
+            and m["bioname"].split(",")[0].strip().casefold() == surname.strip().casefold()]
+    if len(hits) == 1:
+        LEADERSHIP = {**LEADERSHIP, hits[0]: "Speaker"}
+        print(f"  Speaker (from rollcall): {members_all[hits[0]]['bioname']}")
+    else:
+        note_drift("speaker", f"could not match Speaker {won!r} to exactly one member "
+                   f"({len(hits)} matched) — Speaker not flagged")
+else:
+    note_drift("speaker", f"no {SPEAKER_QUESTION!r} rollcall found — Speaker not flagged")
 
 # ── Party majority position + cohesion weight per rollcall ─────────────────────
 # tally[(chamber, rollnumber)][party] = Counter of normalized cast codes
@@ -451,9 +503,21 @@ today = now.strftime("%Y-%m-%d")
 }, indent=2))
 # Each entry carries its congress so a trend view can select one without opening
 # every snapshot — the 119th's archive must not bleed into the 120th's chart.
-(hist_dir / "index.json").write_text(json.dumps(
-    [{"date": p.stem, "congress": json.loads(p.read_text())["congress"]}
-     for p in sorted(hist_dir.glob("*.json")) if p.name != "index.json"]))
+# Skip anything unreadable rather than letting one bad file kill every future
+# build: this runs before the workflow commits, so an unguarded raise here would
+# fail identically every week until someone hand-edited the archive.
+history_index = []
+for p in sorted(hist_dir.glob("*.json")):
+    if p.name == "index.json":
+        continue
+    try:
+        entry = json.loads(p.read_text())
+        history_index.append({"date": p.stem, "congress": entry["congress"]})
+    except (json.JSONDecodeError, KeyError, OSError) as e:
+        print(f"! Skipping unreadable snapshot {p.name}: {type(e).__name__}")
+        note_drift(("snapshot", p.name), f"history/{p.name} is unreadable "
+                                         f"({type(e).__name__}) — left out of index.json")
+(hist_dir / "index.json").write_text(json.dumps(history_index))
 
 # A party code we don't map (Voteview's 328 for anyone who isn't Sanders or King)
 # drops that member from the index entirely. Name them rather than quietly shrink.
@@ -466,23 +530,28 @@ if unscored:
 # Already-reviewed cases stay off the report so the weekly run doesn't cry wolf.
 newly_unscored = [n for i, n in unscored if i not in ACCEPTED_UNSCORED]
 if newly_unscored:
-    note_drift(f"unscored — no mapped caucus, decide and add to "
+    note_drift("unscored", f"unscored — no mapped caucus, decide and add to "
                f"DEM_CAUCUSING_INDEPENDENTS or ACCEPTED_UNSCORED: "
                f"{', '.join(newly_unscored)}")
 if delegates:
     print(f"! Excluded — non-voting delegates: {', '.join(sorted(delegates))}")
-if not LEADERSHIP:
-    print(f"! No leadership table for Congress {CONGRESS} — nobody flagged. "
-          f"Add one to LEADERSHIP_BY_CONGRESS in {Path(__file__).name}.")
-    # Every new Congress needs this filled in once. Surfacing it as an issue is
-    # what makes the January rollover a task rather than a silent omission.
-    note_drift(f"no leadership table for Congress {CONGRESS} — nobody is flagged; "
-               f"add one to LEADERSHIP_BY_CONGRESS in {Path(__file__).name}")
+if CONGRESS not in LEADERSHIP_BY_CONGRESS:
+    print(f"! No leaders/whips table for Congress {CONGRESS} — Speaker still "
+          f"derived from the floor vote. Add one to LEADERSHIP_BY_CONGRESS.")
+    # Conference-elected posts need filling in once per Congress. Surfacing it as
+    # an issue is what makes the January rollover a task, not a silent omission.
+    note_drift("leadership", f"no leaders/whips table for Congress {CONGRESS} — the four floor "
+               f"leaders and whips are unflagged (the Speaker is derived); add one "
+               f"to LEADERSHIP_BY_CONGRESS in {Path(__file__).name}")
 
 # The build still publishes on drift — the numbers are usually fine and stale is
 # worse than slightly-off. CI turns a non-empty report into a GitHub issue.
 if drift:
-    SCHEMA_REPORT.write_text("\n".join(f"- {d}" for d in drift) + "\n")
+    shown, rest = drift[:MAX_DRIFT_LINES], len(drift) - MAX_DRIFT_LINES
+    lines = [f"- {d}" for d in shown]
+    if rest > 0:
+        lines.append(f"- ...and {rest} more kinds of drift (see the run log)")
+    SCHEMA_REPORT.write_text("\n".join(lines) + "\n")
     print(f"! Upstream schema drift ({len(drift)}) — wrote {SCHEMA_REPORT}")
     for d in drift:
         print(f"    {d}")

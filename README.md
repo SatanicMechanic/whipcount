@@ -1,10 +1,10 @@
 # Congressional Independence Index
 
-The Congress is derived from the date — the 1st convened in 1789 and each runs two years — so the weekly job rolls over to the 120th on January 3, 2027 on its own. A new Congress convenes weeks before Voteview publishes its first files, so until that data lands the build falls back one Congress and keeps serving the outgoing one. `VOTES_CONGRESS` pins a specific one.
-
 A weekly-updated dashboard scoring every member of Congress on their independence from party leadership and bipartisan consensus.
 
 **Live site:** `https://<your-username>.github.io/<repo-name>/`
+
+The Congress is derived from the date — the 1st convened in 1789 and each runs two years — so the weekly job rolls over to the 120th on January 3, 2027 on its own. A new Congress convenes weeks before Voteview publishes its first files, so until that data lands the build falls back one Congress and keeps serving the outgoing one. `VOTES_CONGRESS` pins a specific one.
 
 ## How scores work
 
@@ -34,7 +34,9 @@ Each weekly run archives a summary-only snapshot to `docs/history/`, tagged with
 
 The **Caucus drift** chart plots average independence per caucus over time, House and Senate as separate panels. It appears on its own once the archive actually covers a term: at least three snapshots with scored members, the first within 90 days of the Congress convening, and no gap longer than 45 days. The gate is coverage rather than a Congress number because the problem it guards against is real — a cumulative average that had already converged before archiving began is a flat line by construction. So the 119th never shows a chart, the 120th does, and so does every Congress after it with no code change.
 
-`LEADERSHIP_BY_CONGRESS` is keyed by Congress because ICPSR numbers follow the person, not the post — carrying the table forward would label the 119th's Speaker "Speaker" for the rest of his career. An unlisted Congress flags nobody and the build says so.
+**The Speaker is derived, not configured.** It is the only leadership post decided by a recorded vote, so Voteview already has it: `vote_question` is `Election of the Speaker` and the winner sits in `vote_result` as `Surname (ST)`. The build takes the most recent such vote and matches it to a member, which means a mid-Congress replacement — 2023's McCarthy to Johnson — resolves with no edit at all. If the name doesn't match exactly one member, the Speaker goes unflagged and it is reported rather than guessed.
+
+The other four posts per chamber are not derivable at any price: both parties elect their floor leaders and whips in closed conference and caucus meetings that never produce a rollcall. There is exactly one `Election of the Speaker` question in the 119th and no Senate equivalent. Those stay in `LEADERSHIP_BY_CONGRESS`, keyed by Congress because ICPSR numbers follow the person and not the post — carrying the table forward would label the 119th's whip "Whip" for the rest of his career. An unlisted Congress leaves them unflagged and files an issue.
 
 ## Watching the data source
 
