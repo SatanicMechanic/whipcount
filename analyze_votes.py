@@ -3,8 +3,9 @@
 Congressional Voting Independence Index
 Downloads Voteview data, scores each member, outputs JSON for GitHub Pages site.
 
-The Congress is derived from today's date, so the weekly job rolls over to the
-120th on its own. Set VOTES_CONGRESS to pin a specific one.
+Nothing is pinned to one Congress: which one is in scope comes from today's date,
+so the weekly job rolls itself over every odd January. Set VOTES_CONGRESS to pin
+a specific one for rebuilding an old term.
 """
 
 import csv
@@ -155,9 +156,9 @@ DELEGATE_STATES = {"DC", "PR", "VI", "GU", "AS", "MP"}
 # conference and caucus meetings, which produce no vote for Voteview to record.
 #
 # Keyed by Congress on purpose. ICPSR numbers follow the person, not the post, so
-# carrying this table forward would label the 119th's whip "Whip" for the rest of
-# his career. An unlisted Congress flags nobody and says so at the end of the
-# build — a missing badge is recoverable, a wrong one is a false claim.
+# one flat table carried forward would keep calling a former whip "Whip" for the
+# rest of his career. An unlisted Congress flags nobody and says so at the end of
+# the build — a missing badge is recoverable, a wrong one is a false claim.
 LEADERSHIP_BY_CONGRESS = {
     119: {
         20759: "Majority Leader",  # Scalise (R-LA)

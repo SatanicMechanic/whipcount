@@ -2,9 +2,9 @@
 
 A weekly-updated dashboard scoring every member of Congress on their independence from party leadership and bipartisan consensus.
 
-**Live site:** `https://<your-username>.github.io/<repo-name>/`
+**Live site:** <https://congressionalindependence.deathbutt.org>
 
-The Congress is derived from the date — the 1st convened in 1789 and each runs two years — so the weekly job rolls over to the 120th on January 3, 2027 on its own. A new Congress convenes weeks before Voteview publishes its first files, so until that data lands the build falls back one Congress and keeps serving the outgoing one. `VOTES_CONGRESS` pins a specific one.
+Nothing here is pinned to one Congress. Which one is in scope is derived from the date — the 1st convened in 1789 and each runs two years — so the weekly job rolls itself over on January 3 of every odd year. A Congress convenes weeks before Voteview publishes its first files, so until that data lands the build falls back one Congress and keeps serving the outgoing one, then switches on its own. `VOTES_CONGRESS` pins a specific one for rebuilding an old term.
 
 ## How scores work
 
@@ -22,21 +22,21 @@ Each member receives an **Independence Score** — the average of:
 | 20–30%| Rebellious Streak |
 | 30%+  | Lone Wolf |
 
-**Attendance** is tracked separately and does *not* feed into the score. Over every rollcall their chamber held between their first and last recorded vote, `missed %` counts the ones with no Yea or Nay from them — Present, Not Voting, and the ones Voteview has no row for at all. That last case matters: the Speaker votes at his own discretion and is simply absent from about a quarter of House rollcalls, which a row count would score as perfect attendance. Bounding by first and last vote keeps members who arrived or left mid-congress from being charged for votes held outside their service. Showing up is not the same thing as being independent, so the two numbers stay apart.
+**Attendance** is tracked separately and does *not* feed into the score. Over every rollcall their chamber held between their first and last recorded vote, `missed %` counts the ones with no Yea or Nay from them — Present, Not Voting, and the ones Voteview has no row for at all. That last case matters: the Speaker votes at his own discretion and is simply absent from a large share of House rollcalls, which a row count would score as perfect attendance. Bounding by first and last vote keeps members who arrived or left mid-congress from being charged for votes held outside their service. Showing up is not the same thing as being independent, so the two numbers stay apart.
 
 Yea and Nay each cover a range of Voteview cast codes (1–3 and 4–6); all of them are counted. Only decisive Yea/Nay votes go into the score denominators.
 
-**Floor leaders are flagged, not excluded.** The Speaker plus each party's leader and whip in each chamber carry a `leadership` field; the table badges them and the filter can hide or isolate them. They schedule the votes they then vote on, so their loyalty is partly loyalty to an agenda they set themselves — the Speaker scores as the most loyal House Republican, on the subset of votes he chose to cast. Excluding them outright would drop the first names anyone looks up, so the call is left to the reader.
+**Floor leaders are flagged, not excluded.** The Speaker plus each party's leader and whip in each chamber carry a `leadership` field; the table badges them and the filter can hide or isolate them. They schedule the votes they then vote on, so their loyalty is partly loyalty to an agenda they set themselves — in the 119th the Speaker came out the single most loyal member of his caucus, on the subset of votes he chose to cast. Excluding them outright would drop the first names anyone looks up, so the call is left to the reader.
 
 ## History
 
 Each weekly run archives a summary-only snapshot to `docs/history/`, tagged with its Congress. There is no per-member series: it was measured, and the median member moves 0.02 points week over week while the only large swings are new arrivals thrashing on a small denominator. The signal is at caucus level, so that is all the snapshots keep — about 110 lines a week instead of 4,500.
 
-The **Caucus drift** chart plots average independence per caucus over time, House and Senate as separate panels. It appears on its own once the archive actually covers a term: at least three snapshots with scored members, the first within 90 days of the Congress convening, and no gap longer than 45 days. The gate is coverage rather than a Congress number because the problem it guards against is real — a cumulative average that had already converged before archiving began is a flat line by construction. So the 119th never shows a chart, the 120th does, and so does every Congress after it with no code change.
+The **Caucus drift** chart plots average independence per caucus over time, House and Senate as separate panels. It appears on its own once the archive actually covers a term: at least three snapshots with scored members, the first within 90 days of the Congress convening, and no gap longer than 45 days. The gate is coverage rather than a Congress number because the problem it guards against is real: a cumulative average that had already converged before archiving began is a flat line by construction. Any term archived from its start gets a chart; one the archive only caught the tail of does not, and neither case needs a code change. (Archiving here began partway through the 119th, so that term shows no chart.)
 
 **The Speaker is derived, not configured.** It is the only leadership post decided by a recorded vote, so Voteview already has it: `vote_question` is `Election of the Speaker` and the winner sits in `vote_result` as `Surname (ST)`. The build takes the most recent such vote and matches it to a member, which means a mid-Congress replacement — 2023's McCarthy to Johnson — resolves with no edit at all. If the name doesn't match exactly one member, the Speaker goes unflagged and it is reported rather than guessed.
 
-The other four posts per chamber are not derivable at any price: both parties elect their floor leaders and whips in closed conference and caucus meetings that never produce a rollcall. There is exactly one `Election of the Speaker` question in the 119th and no Senate equivalent. Those stay in `LEADERSHIP_BY_CONGRESS`, keyed by Congress because ICPSR numbers follow the person and not the post — carrying the table forward would label the 119th's whip "Whip" for the rest of his career. An unlisted Congress leaves them unflagged and files an issue.
+The other four posts per chamber are not derivable at any price: both parties elect their floor leaders and whips in closed conference and caucus meetings that never produce a rollcall. `Election of the Speaker` is the only leadership question Voteview records, and the Senate has no equivalent at all. Those four stay in `LEADERSHIP_BY_CONGRESS`, keyed by Congress because ICPSR numbers follow the person and not the post — one flat table carried forward would keep calling a former whip "Whip" for the rest of his career. An unlisted Congress leaves them unflagged and files an issue, which is how each new term gets the table filled in.
 
 ## Watching the data source
 
@@ -44,9 +44,11 @@ Voteview is a third party that can change its files whenever it likes, so the bu
 
 Anything unexpected lands in `schema-drift.txt`, and the weekly workflow turns a non-empty report into a GitHub issue — commenting on the open one rather than filing a new issue every Monday. A clean run deletes the file, so a fixed problem stops nagging. Two maintenance conditions ride the same channel: an unmapped member who needs a caucus decision, and a Congress with no leadership table. That last one is what makes the January rollover a task in the tracker rather than a silent omission. Cases already reviewed and accepted go in `ACCEPTED_UNSCORED` so the weekly run stays quiet.
 
-Data sourced from [Voteview.com](https://voteview.com). Sanders and King are scored against the Democratic caucus they align with, but displayed as Independent. Anyone else Voteview codes as Independent has no caucus to measure deviation against and is left out of the index — the build prints their names so the omission is never silent. The President appears in Voteview's vote files (announced positions are recorded as cast codes) and is excluded entirely. So are the six non-voting delegates (DC, PR, VI, GU, AS, MP): barred from final-passage votes, their record is a Committee-of-the-Whole subset of a few dozen votes against a chamber norm of hundreds, and their 85%+ "missed" rate is the franchise rather than attendance. Ranking them beside voting members would compare two different things, so they are dropped from the index and from the party-cohesion tallies — the build prints their names.
+Data sourced from [Voteview.com](https://voteview.com). Sanders and King are scored against the Democratic caucus they align with, but displayed as Independent. Anyone else Voteview codes as Independent has no caucus to measure deviation against and is left out of the index — the build prints their names so the omission is never silent. The President appears in Voteview's vote files (announced positions are recorded as cast codes) and is excluded entirely. So are the six non-voting delegates (DC, PR, VI, GU, AS, MP): barred from final-passage votes, their record is a Committee-of-the-Whole subset of a few dozen votes against a chamber norm of hundreds, and the resulting "missed" rate — well past 80% — is the franchise rather than attendance. Ranking them beside voting members would compare two different things, so they are dropped from the index and from the party-cohesion tallies — the build prints their names.
 
-## Setup
+## Running your own copy
+
+This one is already deployed; the steps below are for standing up a fork.
 
 ### 1. Create repo and push files
 
