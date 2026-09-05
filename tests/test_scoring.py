@@ -30,6 +30,7 @@ import os
 import subprocess
 import sys
 import tempfile
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -103,15 +104,110 @@ def build_fixture(data_dir):
         f.write("congress,chamber,rollnumber,icpsr,cast_code\n")
 
 
+def check_congress_rollover(data_dir, out_dir):
+    """The Congress is derived from the date, so the weekly job rolls itself over.
+
+    analyze_votes.py is a top-to-bottom script — importing it runs the whole
+    pipeline — so point it at the fixture and a scratch output dir first.
+    Otherwise the import rewrites the real docs/ and drops a history snapshot
+    into the repo.
+    """
+    os.environ.update(VOTES_OFFLINE="1", VOTES_CONGRESS="119",
+                      VOTES_DATA_DIR=str(data_dir), VOTES_OUT_DIR=str(out_dir))
+    sys.path.insert(0, str(ROOT))
+    from importlib import import_module
+    congress_on = import_module("analyze_votes").congress_on
+
+    cases = [
+        (date(2025, 1, 2), 118),   # 119th has not convened yet
+        (date(2025, 1, 3), 119),   # convenes January 3
+        (date(2026, 12, 31), 119),
+        (date(2027, 1, 2), 119),   # still the outgoing Congress
+        (date(2027, 1, 3), 120),   # the 120th
+        (date(2028, 12, 31), 120),
+        (date(2029, 1, 3), 121),
+    ]
+    for day, want in cases:
+        assert congress_on(day) == want, f"{day}: got {congress_on(day)}, want {want}"
+
+
+def run_script(data_dir, out_dir, report):
+    """Run analyze_votes.py offline; return (exit code, report text)."""
+    env = {**os.environ, "VOTES_DATA_DIR": str(data_dir), "VOTES_OUT_DIR": str(out_dir),
+           "VOTES_OFFLINE": "1", "VOTES_CONGRESS": "119",
+           "VOTES_SCHEMA_REPORT": str(report)}
+    p = subprocess.run([sys.executable, "analyze_votes.py"], cwd=ROOT, env=env,
+                       capture_output=True, text=True)
+    return p.returncode, (report.read_text() if report.exists() else "")
+
+
+def check_schema_drift(tmp):
+    """Voteview can change its files. Neither failure mode may be silent."""
+    def fixture(mutate):
+        d = tmp / f"drift{next(check_schema_drift.n)}"
+        d.mkdir()
+        build_fixture(d)
+        mutate(d)
+        return d
+
+    def rewrite(path, fn):
+        lines = path.read_text().splitlines()
+        path.write_text("\n".join(fn(lines)) + "\n")
+
+    # A renamed or dropped column is unrecoverable — stop, don't publish garbage.
+    def rename_column(d):
+        rewrite(d / "H119_votes.csv",
+                lambda ls: [ls[0].replace("cast_code", "vote_cast")] + ls[1:])
+    code, report = run_script(fixture(rename_column), tmp / "o1", tmp / "r1.txt")
+    assert code != 0, "a renamed column must fail the build"
+    assert "cast_code" in report and "renamed" in report, report
+
+    # An unknown cast_code still publishes — normalize() drops it into "missed",
+    # which is wrong but not catastrophic. It must not be silent.
+    def odd_cast_code(d):
+        rewrite(d / "H119_votes.csv",
+                lambda ls: ls[:1] + [ls[1].rsplit(",", 1)[0] + ",11"] + ls[2:])
+    code, report = run_script(fixture(odd_cast_code), tmp / "o2", tmp / "r2.txt")
+    assert code == 0, "an unknown cast_code should still publish"
+    assert "cast_code 11" in report, report
+
+    # Same for a chamber or party_code Voteview has not used before.
+    def odd_member(d):
+        def fn(ls):
+            f = ls[1].split(",")
+            f[1], f[5] = "Territory", "999"     # chamber, party_code
+            return ls[:1] + [",".join(f)] + ls[2:]
+        rewrite(d / "H119_members.csv", fn)
+    code, report = run_script(fixture(odd_member), tmp / "o3", tmp / "r3.txt")
+    assert code == 0, "an unknown chamber should still publish"
+    assert "chamber 'Territory'" in report and "party_code '999'" in report, report
+
+    # A clean run must clear a stale report, or CI reopens an issue forever.
+    d = tmp / "clean"; d.mkdir(); build_fixture(d)
+    stale = tmp / "r4.txt"
+    stale.write_text("left over from last week\n")
+    code, report = run_script(d, tmp / "o4", stale)
+    assert code == 0 and report == "", f"stale report not cleared: {report!r}"
+
+
+check_schema_drift.n = iter(range(100))
+
+
 def main():
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         data_dir, out_dir = tmp / "data", tmp / "out"
         data_dir.mkdir()
         build_fixture(data_dir)
+        check_congress_rollover(data_dir, tmp / "import_out")
+        check_schema_drift(tmp)
 
+        # VOTES_CONGRESS pins the fixture's Congress. Without it the script
+        # derives one from today's date and this test would start looking for
+        # H120_*.csv on 2027-01-03.
         env = {**os.environ, "VOTES_DATA_DIR": str(data_dir),
-               "VOTES_OUT_DIR": str(out_dir), "VOTES_OFFLINE": "1"}
+               "VOTES_OUT_DIR": str(out_dir), "VOTES_OFFLINE": "1",
+               "VOTES_CONGRESS": "119"}
         subprocess.run([sys.executable, "analyze_votes.py"], cwd=ROOT, env=env, check=True)
 
         data = json.loads((out_dir / "data.json").read_text())
@@ -205,14 +301,16 @@ def main():
         assert dates == sorted(dates, reverse=True)
 
         # ── history snapshot ──────────────────────────────────────────────────
-        dates = json.loads((out_dir / "history" / "index.json").read_text())
-        assert len(dates) == 1
-        snap = json.loads((out_dir / "history" / f"{dates[0]}.json").read_text())
-        assert snap["date"] == dates[0] and snap["congress"] == 119
+        index = json.loads((out_dir / "history" / "index.json").read_text())
+        assert len(index) == 1
+        assert index[0]["congress"] == 119   # lets a trend view pick one congress
+        snap = json.loads((out_dir / "history" / f"{index[0]['date']}.json").read_text())
+        assert snap["date"] == index[0]["date"] and snap["congress"] == 119
         # no build timestamp, so an unchanged re-run produces an identical file
         assert "updated_at" not in snap
-        assert set(snap["members"][0]) == {
-            "icpsr", "name", "party", "chamber", "independence_score", "missed_pct"}
+        # summary only — the per-member series was dropped as noise
+        assert set(snap) == {"date", "congress", "summary"}
+        assert snap["summary"]["house_dem"]["count"] == 7
 
     print("all good")
 

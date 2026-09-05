@@ -1,4 +1,6 @@
-# 119th Congress · Independence Index
+# Congressional Independence Index
+
+The Congress is derived from the date — the 1st convened in 1789 and each runs two years — so the weekly job rolls over to the 120th on January 3, 2027 on its own. A new Congress convenes weeks before Voteview publishes its first files, so until that data lands the build falls back one Congress and keeps serving the outgoing one. `VOTES_CONGRESS` pins a specific one.
 
 A weekly-updated dashboard scoring every member of Congress on their independence from party leadership and bipartisan consensus.
 
@@ -25,6 +27,20 @@ Each member receives an **Independence Score** — the average of:
 Yea and Nay each cover a range of Voteview cast codes (1–3 and 4–6); all of them are counted. Only decisive Yea/Nay votes go into the score denominators.
 
 **Floor leaders are flagged, not excluded.** The Speaker plus each party's leader and whip in each chamber carry a `leadership` field; the table badges them and the filter can hide or isolate them. They schedule the votes they then vote on, so their loyalty is partly loyalty to an agenda they set themselves — the Speaker scores as the most loyal House Republican, on the subset of votes he chose to cast. Excluding them outright would drop the first names anyone looks up, so the call is left to the reader.
+
+## History
+
+Each weekly run archives a summary-only snapshot to `docs/history/`, tagged with its Congress. There is no per-member series: it was measured, and the median member moves 0.02 points week over week while the only large swings are new arrivals thrashing on a small denominator. The signal is at caucus level, so that is all the snapshots keep — about 110 lines a week instead of 4,500.
+
+The **Caucus drift** chart plots average independence per caucus over time, House and Senate as separate panels. It appears on its own once the archive actually covers a term: at least three snapshots with scored members, the first within 90 days of the Congress convening, and no gap longer than 45 days. The gate is coverage rather than a Congress number because the problem it guards against is real — a cumulative average that had already converged before archiving began is a flat line by construction. So the 119th never shows a chart, the 120th does, and so does every Congress after it with no code change.
+
+`LEADERSHIP_BY_CONGRESS` is keyed by Congress because ICPSR numbers follow the person, not the post — carrying the table forward would label the 119th's Speaker "Speaker" for the rest of his career. An unlisted Congress flags nobody and the build says so.
+
+## Watching the data source
+
+Voteview is a third party that can change its files whenever it likes, so the build checks what it gets. A missing or renamed column stops the run — there is no sensible way to score without it. A `chamber`, `party_code`, or `cast_code` the script doesn't recognise is the more dangerous case, because nothing would otherwise go wrong: an unknown cast code just falls into the "missed" bucket and the index is quietly incorrect. Those are recorded and the build still publishes.
+
+Anything unexpected lands in `schema-drift.txt`, and the weekly workflow turns a non-empty report into a GitHub issue — commenting on the open one rather than filing a new issue every Monday. A clean run deletes the file, so a fixed problem stops nagging. Two maintenance conditions ride the same channel: an unmapped member who needs a caucus decision, and a Congress with no leadership table. That last one is what makes the January rollover a task in the tracker rather than a silent omission. Cases already reviewed and accepted go in `ACCEPTED_UNSCORED` so the weekly run stays quiet.
 
 Data sourced from [Voteview.com](https://voteview.com). Sanders and King are scored against the Democratic caucus they align with, but displayed as Independent. Anyone else Voteview codes as Independent has no caucus to measure deviation against and is left out of the index — the build prints their names so the omission is never silent. The President appears in Voteview's vote files (announced positions are recorded as cast codes) and is excluded entirely. So are the six non-voting delegates (DC, PR, VI, GU, AS, MP): barred from final-passage votes, their record is a Committee-of-the-Whole subset of a few dozen votes against a chamber norm of hundreds, and their 85%+ "missed" rate is the franchise rather than attendance. Ranking them beside voting members would compare two different things, so they are dropped from the index and from the party-cohesion tallies — the build prints their names.
 
@@ -61,7 +77,8 @@ The Action runs automatically every Monday at 8am UTC thereafter.
 
 ```bash
 uv run --with requests python3 analyze_votes.py          # generates docs/data.json, docs/members/, docs/history/
-python3 tests/test_scoring.py     # self-check, no network needed
+python3 tests/test_scoring.py     # scoring self-check, no network needed
+node tests/test_site.mjs          # site self-check: empty-Congress render, trend chart
 cd docs && python3 -m http.server 8000
 # open http://localhost:8000
 ```

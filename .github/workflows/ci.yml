@@ -36,3 +36,7 @@ jobs:
 
       - name: Run self-check
         run: python3 tests/test_scoring.py
+
+      # Node is preinstalled on ubuntu-latest; the site check has no dependencies.
+      - name: Run site self-check
+        run: node tests/test_site.mjs

@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 """
-Congress 119 Voting Independence Index
+Congressional Voting Independence Index
 Downloads Voteview data, scores each member, outputs JSON for GitHub Pages site.
+
+The Congress is derived from today's date, so the weekly job rolls over to the
+120th on its own. Set VOTES_CONGRESS to pin a specific one.
 """
 
 import csv
 import json
 import os
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-# ponytail: hardcoded for the 119th Congress (2025-2027); bump manually when it ends
-CONGRESS = 119
 VOTEVIEW_BASE = "https://voteview.com/static/data/out"
 # VOTES_DATA_DIR relocates the CSV directory. VOTES_OFFLINE=1 skips the download
 # and reuses whatever is already there. They are separate on purpose: relocating
@@ -22,11 +23,21 @@ DATA_DIR = Path(os.environ.get("VOTES_DATA_DIR", "data"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 OFFLINE = os.environ.get("VOTES_OFFLINE") == "1"
 
-FILES = [
-    f"{VOTEVIEW_BASE}/{kind}/{ch}{CONGRESS}_{kind}.csv"
-    for kind in ("votes", "members", "rollcalls")
-    for ch in ("H", "S")
-]
+
+def congress_on(day):
+    """Which Congress is sitting on `day`.
+
+    The 1st convened in 1789 and each runs two years, so the arithmetic is
+    exact — no table to maintain. A Congress convenes on January 3 of the odd
+    year, so shift back two days to keep Jan 1-2 with the outgoing one.
+    """
+    return ((day - timedelta(days=2)).year - 1789) // 2 + 1
+
+
+# VOTES_CONGRESS pins a specific Congress — needed to rebuild an old one, and
+# what the self-check uses so its fixture doesn't expire on New Year's Day.
+CONGRESS = int(os.environ.get("VOTES_CONGRESS") or congress_on(datetime.now(timezone.utc).date()))
+PINNED = bool(os.environ.get("VOTES_CONGRESS"))
 
 MIN_VOTES = 30       # exclude members with fewer than this many classified votes
 MAX_DISSENTS = 500   # per-member detail file cap
@@ -39,16 +50,71 @@ if OFFLINE:
 else:
     import requests
 
-    for url in FILES:
-        dest = DATA_DIR / Path(url).name
-        r = requests.get(url, timeout=60)
-        r.raise_for_status()
-        dest.write_bytes(r.content)
-        print(f"Downloaded: {url}")
+    def download(congress):
+        """Fetch all six CSVs. False if Voteview has none for this Congress yet."""
+        for kind in ("votes", "members", "rollcalls"):
+            for ch in ("H", "S"):
+                url = f"{VOTEVIEW_BASE}/{kind}/{ch}{congress}_{kind}.csv"
+                r = requests.get(url, timeout=60)
+                if r.status_code == 404:
+                    return False
+                r.raise_for_status()
+                (DATA_DIR / Path(url).name).write_bytes(r.content)
+                print(f"Downloaded: {url}")
+        return True
 
-def read_csv(name):
+    # A Congress convenes January 3, but Voteview publishes days or weeks later,
+    # and the two chambers don't necessarily land together. Fall back one Congress
+    # rather than failing every weekly run during the gap — the site keeps serving
+    # the outgoing Congress until the new one's data lands, then switches itself.
+    if not download(CONGRESS):
+        if PINNED:
+            raise SystemExit(f"Voteview has no data for Congress {CONGRESS}")
+        print(f"! Voteview has no Congress {CONGRESS} data yet — using {CONGRESS - 1}")
+        CONGRESS -= 1
+        if not download(CONGRESS):
+            raise SystemExit(f"Voteview has no data for Congress {CONGRESS}")
+
+# ── Upstream schema ────────────────────────────────────────────────────────────
+# Voteview is a third party that can change its files at any time. A renamed
+# column would otherwise surface as a bare KeyError hundreds of lines down; a new
+# cast_code or chamber value would not surface at all — it would silently stop
+# being counted, and the index would just be quietly wrong. Check both, write
+# anything unexpected to the drift report, and let CI open an issue from it.
+REQUIRED_COLUMNS = {
+    "members":   {"icpsr", "chamber", "state_abbrev", "party_code",
+                  "district_code", "bioname"},
+    "votes":     {"icpsr", "chamber", "rollnumber", "cast_code"},
+    "rollcalls": {"chamber", "rollnumber", "date", "bill_number",
+                  "vote_question", "vote_desc", "vote_result"},
+}
+KNOWN_CHAMBERS = {"House", "Senate", "President"}
+KNOWN_CAST_CODES = set(range(10))   # 0 not a member · 1-6 Yea/Nay · 7-8 Present · 9 Not Voting
+KNOWN_PARTY_CODES = {"100", "200", "328"}
+SCHEMA_REPORT = Path(os.environ.get("VOTES_SCHEMA_REPORT", "schema-drift.txt"))
+drift = []
+
+
+def note_drift(msg):
+    if msg not in drift:
+        drift.append(msg)
+
+
+def fail_schema(msg):
+    """Unrecoverable drift: record it for CI, then stop."""
+    SCHEMA_REPORT.write_text(msg + "\n")
+    raise SystemExit(f"! {msg}")
+
+
+def read_csv(name, kind):
     with open(DATA_DIR / name, newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f))
+        reader = csv.DictReader(f)
+        rows = list(reader)
+        header = set(reader.fieldnames or [])   # not set(rows[0]) — files can be empty
+    missing = REQUIRED_COLUMNS[kind] - header
+    if missing:
+        fail_schema(f"{name}: Voteview dropped or renamed column(s): {', '.join(sorted(missing))}")
+    return rows
 
 # ── Members ────────────────────────────────────────────────────────────────────
 # 100=D, 200=R, 328=Independent. Only Sanders and King caucus with the Democrats;
@@ -56,6 +122,12 @@ def read_csv(name):
 CAUCUS        = {"100": "D", "200": "R"}
 DISPLAY_PARTY = {"100": "D", "200": "R", "328": "I"}
 DEM_CAUCUSING_INDEPENDENTS = {29147, 41300}  # Sanders (VT), King (ME)
+
+# Unmapped members we've already looked at and accepted as unscorable. Voteview
+# gives a mid-term party switcher a second row under a 9xxxx ICPSR, so 92336 is
+# Kiley's post-switch stint alongside his ordinary 22336 row. Listed here only to
+# keep the weekly drift report quiet; anyone not listed gets reported once.
+ACCEPTED_UNSCORED = {92336}
 
 # Non-voting delegates. They are barred from final-passage votes, so their
 # record is a Committee-of-the-Whole subset — tens of votes against a chamber
@@ -66,26 +138,40 @@ DELEGATE_STATES = {"DC", "PR", "VI", "GU", "AS", "MP"}
 
 # Floor leaders schedule the votes they then vote on, so their loyalty is partly
 # loyalty to their own agenda. Flagged rather than excluded — they are the first
-# names a reader looks up. Update when the leadership changes.
-LEADERSHIP = {
-    21727: "Speaker",          # Johnson (R-LA)
-    20759: "Majority Leader",  # Scalise (R-LA)
-    21531: "Majority Whip",    # Emmer (R-MN)
-    21343: "Minority Leader",  # Jeffries (D-NY)
-    21375: "Minority Whip",    # Clark (D-MA)
-    29754: "Majority Leader",  # Thune (R-SD)
-    40707: "Majority Whip",    # Barrasso (R-WY)
-    14858: "Minority Leader",  # Schumer (D-NY)
-    15021: "Minority Whip",    # Durbin (D-IL)
+# names a reader looks up.
+#
+# Keyed by Congress on purpose. ICPSR numbers follow the person, not the post, so
+# carrying this table forward would label the 119th's Speaker "Speaker" for the
+# rest of his career. An unlisted Congress flags nobody and says so at the end of
+# the build — a missing badge is recoverable, a wrong one is a false claim.
+LEADERSHIP_BY_CONGRESS = {
+    119: {
+        21727: "Speaker",          # Johnson (R-LA)
+        20759: "Majority Leader",  # Scalise (R-LA)
+        21531: "Majority Whip",    # Emmer (R-MN)
+        21343: "Minority Leader",  # Jeffries (D-NY)
+        21375: "Minority Whip",    # Clark (D-MA)
+        29754: "Majority Leader",  # Thune (R-SD)
+        40707: "Majority Whip",    # Barrasso (R-WY)
+        14858: "Minority Leader",  # Schumer (D-NY)
+        15021: "Minority Whip",    # Durbin (D-IL)
+    },
 }
+LEADERSHIP = LEADERSHIP_BY_CONGRESS.get(CONGRESS, {})
 
 members_all = {}
 delegates = []
 for ch in ("H", "S"):
-    for m in read_csv(f"{ch}{CONGRESS}_members.csv"):
+    for m in read_csv(f"{ch}{CONGRESS}_members.csv", "members"):
         # Voteview carries the president's announced positions as ordinary
         # cast_code rows under chamber "President". They are not votes: drop the
         # row so they reach neither the party cohesion tally nor the index.
+        if m["chamber"] not in KNOWN_CHAMBERS:
+            note_drift(f"members: unrecognised chamber {m['chamber']!r} "
+                       f"(e.g. {m['bioname']}) — skipped")
+        if m["party_code"] not in KNOWN_PARTY_CODES:
+            note_drift(f"members: unrecognised party_code {m['party_code']!r} "
+                       f"(e.g. {m['bioname']}) — member left unscored")
         if m["chamber"] not in ("House", "Senate"):
             continue
         if m["state_abbrev"] in DELEGATE_STATES:
@@ -112,10 +198,16 @@ span = {}                      # icpsr -> [chamber, first roll, last roll] on re
 cast_count = Counter()         # icpsr -> decisive votes actually cast
 
 for ch in ("H", "S"):
-    for v in read_csv(f"{ch}{CONGRESS}_votes.csv"):
+    for v in read_csv(f"{ch}{CONGRESS}_votes.csv", "votes"):
         chamber, roll = v["chamber"], int(v["rollnumber"])
         rolls_seen[chamber].add(roll)
-        code = normalize(int(v["cast_code"]))
+        raw = int(v["cast_code"])
+        if raw not in KNOWN_CAST_CODES:
+            # normalize() passes an unknown code straight through, where it lands
+            # in the "missed" bucket. Silent miscounting is the failure to catch.
+            note_drift(f"votes: unrecognised cast_code {raw} "
+                       f"({chamber} rollcall {roll}) — counted as a missed vote")
+        code = normalize(raw)
         if code == 0:
             continue
         icpsr = int(v["icpsr"])
@@ -145,7 +237,7 @@ for icpsr, (chamber, first, last) in span.items():
 # ── Rollcall context ───────────────────────────────────────────────────────────
 rollcalls = {}
 for ch in ("H", "S"):
-    for r in read_csv(f"{ch}{CONGRESS}_rollcalls.csv"):
+    for r in read_csv(f"{ch}{CONGRESS}_rollcalls.csv", "rollcalls"):
         rollcalls[(r["chamber"], int(r["rollnumber"]))] = {
             "date": r["date"],
             "bill_number": r["bill_number"],
@@ -341,7 +433,12 @@ for r in members:
                    "pct": r["missed_pct"]},
     }))
 
-# History snapshot — one per UTC day, overwritten on re-run
+# History snapshot — one per UTC day, overwritten on re-run.
+# Summary only. A per-member series was measured and isn't worth the bytes: the
+# median member moves 0.02 points week over week and the only members who swing
+# are new arrivals thrashing on a small denominator. The signal is at caucus
+# level, which is exactly what summary holds — and this keeps a weekly commit
+# to ~60 lines instead of ~4500 for the rest of the congress.
 hist_dir = docs / "history"
 hist_dir.mkdir(parents=True, exist_ok=True)
 today = now.strftime("%Y-%m-%d")
@@ -351,21 +448,46 @@ today = now.strftime("%Y-%m-%d")
     "date": today,
     "congress": CONGRESS,
     "summary": summary,
-    "members": [{k: r[k] for k in
-                 ("icpsr", "name", "party", "chamber", "independence_score", "missed_pct")}
-                for r in members],
 }, indent=2))
+# Each entry carries its congress so a trend view can select one without opening
+# every snapshot — the 119th's archive must not bleed into the 120th's chart.
 (hist_dir / "index.json").write_text(json.dumps(
-    sorted(p.stem for p in hist_dir.glob("*.json") if p.name != "index.json")))
+    [{"date": p.stem, "congress": json.loads(p.read_text())["congress"]}
+     for p in sorted(hist_dir.glob("*.json")) if p.name != "index.json"]))
 
 # A party code we don't map (Voteview's 328 for anyone who isn't Sanders or King)
 # drops that member from the index entirely. Name them rather than quietly shrink.
-unscored = sorted(m["bioname"] for m in members_all.values()
+unscored = sorted((int(m["icpsr"]), m["bioname"]) for m in members_all.values()
                   if m["caucus"] not in ("D", "R"))
 if unscored:
-    print(f"! Unscored — no mapped caucus: {', '.join(unscored)}")
+    print(f"! Unscored — no mapped caucus: {', '.join(n for _, n in unscored)}")
+# Anyone new needs a person to decide which caucus, if any, they sit with — a log
+# line nobody reads is how a member quietly vanishes from the index for a term.
+# Already-reviewed cases stay off the report so the weekly run doesn't cry wolf.
+newly_unscored = [n for i, n in unscored if i not in ACCEPTED_UNSCORED]
+if newly_unscored:
+    note_drift(f"unscored — no mapped caucus, decide and add to "
+               f"DEM_CAUCUSING_INDEPENDENTS or ACCEPTED_UNSCORED: "
+               f"{', '.join(newly_unscored)}")
 if delegates:
     print(f"! Excluded — non-voting delegates: {', '.join(sorted(delegates))}")
+if not LEADERSHIP:
+    print(f"! No leadership table for Congress {CONGRESS} — nobody flagged. "
+          f"Add one to LEADERSHIP_BY_CONGRESS in {Path(__file__).name}.")
+    # Every new Congress needs this filled in once. Surfacing it as an issue is
+    # what makes the January rollover a task rather than a silent omission.
+    note_drift(f"no leadership table for Congress {CONGRESS} — nobody is flagged; "
+               f"add one to LEADERSHIP_BY_CONGRESS in {Path(__file__).name}")
+
+# The build still publishes on drift — the numbers are usually fine and stale is
+# worse than slightly-off. CI turns a non-empty report into a GitHub issue.
+if drift:
+    SCHEMA_REPORT.write_text("\n".join(f"- {d}" for d in drift) + "\n")
+    print(f"! Upstream schema drift ({len(drift)}) — wrote {SCHEMA_REPORT}")
+    for d in drift:
+        print(f"    {d}")
+elif SCHEMA_REPORT.exists():
+    SCHEMA_REPORT.unlink()   # clean run — don't let a stale report reopen an issue
 
 print(f"✓ Wrote {len(members)} members to {docs / 'data.json'}")
 print(f"  Per-member files: {len(members)} · History snapshot: {today}")

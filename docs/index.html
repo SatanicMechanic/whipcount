@@ -15,6 +15,8 @@
     --muted:     #6b6b80;
     --dem:       #4a9eff;
     --rep:       #ff5f5f;
+    --dem-line:  #4590e8;
+    --rep-line:  #f05555;
     --ind:       #a78bfa;
     --accent:    #f0c040;
 
@@ -226,6 +228,73 @@
   }
 
   /* ── Controls ── */
+  /* Trend — validated against #13131a in dark mode: adjacent CVD ΔE 21.8
+     (protan), normal-vision 31.1, contrast >= 3:1. One step darker than the
+     --dem/--rep pill colors, which sit just above the L 0.67 dark-mode ceiling. */
+  .trend {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 2.5rem auto;
+    padding: 0 2rem;
+  }
+  .trend-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .trend-title { font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; }
+  .trend-sub   { font-size: .7rem; color: var(--muted); }
+  .trend-legend { display: flex; gap: 1rem; margin-left: auto; font-size: .7rem; }
+  .trend-key { display: flex; align-items: center; gap: .4rem; color: var(--muted); }
+  .trend-key i { width: 14px; height: 2px; border-radius: 1px; display: block; }
+  .trend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 1rem;
+  }
+  .trend-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.25rem 1.5rem 1rem;
+  }
+  .trend-panel h4 {
+    font-size: .7rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 .75rem;
+    font-weight: 500;
+  }
+  .trend-panel svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .trend-panel .gridline { stroke: var(--border); stroke-width: 1; }
+  .trend-panel .axis-lbl { fill: var(--muted); font-size: 9px; font-family: 'DM Mono', monospace; }
+  .trend-panel .series    { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .trend-panel .end-dot   { stroke: var(--surface); stroke-width: 2; }
+  .trend-panel .end-lbl   { fill: var(--text); font-size: 10px; font-family: 'DM Mono', monospace; }
+  .trend-panel .hit       { fill: transparent; cursor: crosshair; }
+  .trend-panel .crosshair { stroke: var(--muted); stroke-width: 1; opacity: 0; }
+  .trend-tip {
+    position: fixed;
+    pointer-events: none;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: .5rem .65rem;
+    font-size: .7rem;
+    font-family: 'DM Mono', monospace;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity .1s;
+    z-index: 50;
+  }
+  .trend-tip .tip-date { color: var(--muted); margin-bottom: .3rem; }
+  .trend-tip .tip-row  { display: flex; gap: .6rem; justify-content: space-between; }
+  .trend-tip .tip-row i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
   .lead-badge {
     background: rgba(255,255,255,.06);
     color: var(--muted);
@@ -671,6 +740,20 @@
 
   <div class="summary" id="summary-cards"></div>
 
+  <!-- Hidden until the 120th Congress has enough snapshots; see renderTrend(). -->
+  <div class="trend" id="trend" style="display:none">
+    <div class="trend-head">
+      <span class="trend-title">Caucus drift</span>
+      <span class="trend-sub" id="trend-sub"></span>
+      <span class="trend-legend">
+        <span class="trend-key"><i style="background:var(--dem-line)"></i>Democrat</span>
+        <span class="trend-key"><i style="background:var(--rep-line)"></i>Republican</span>
+      </span>
+    </div>
+    <div class="trend-grid" id="trend-grid"></div>
+  </div>
+  <div class="trend-tip" id="trend-tip"></div>
+
   <div class="legend">
     <span class="legend-title">Scale</span>
     <span class="badge" style="background:rgba(255,59,59,.15);color:var(--s0)">&lt;1% Mindless Drone</span>
@@ -813,18 +896,20 @@ function renderSummaryCards(summary) {
 
   const container = document.getElementById("summary-cards");
   container.innerHTML = cards.map(c => {
-    const s = summary[c.key];
-    const total = s.count;
+    // Early in a Congress nobody has cleared MIN_VOTES yet and group_stats
+    // returns {}. Render an empty card rather than throwing — this runs before
+    // the loading screen is hidden, so a throw here takes the whole page down.
+    const s     = summary[c.key] || {};
+    const dist  = s.label_dist   || {};
+    const total = s.count        || 0;
 
-    const barSegs = LABELS.map((lbl, i) => {
-      const count = s.label_dist[lbl] || 0;
-      const pct = (count / total * 100).toFixed(1);
+    const barSegs = !total ? "" : LABELS.map((lbl, i) => {
+      const count = dist[lbl] || 0;
       return `<div class="dist-bar-seg" title="${lbl}: ${count}" style="flex:${count};background:${LABEL_RAW_COLORS[i]}"></div>`;
     }).join("");
 
     const rows = LABELS.map((lbl, i) => {
-      const count = s.label_dist[lbl] || 0;
-      const pct = (count / total * 100).toFixed(0);
+      const count = dist[lbl] || 0;
       return `
         <div class="dist-row">
           <div class="dist-row-dot" style="background:${LABEL_RAW_COLORS[i]}"></div>
@@ -876,7 +961,9 @@ function renderTable() {
 
   const tbody = document.getElementById("tbody");
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="11" class="no-results">NO RESULTS</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="no-results">${allMembers.length
+      ? "NO RESULTS"
+      : "NO MEMBERS SCORED YET &middot; TOO FEW VOTES RECORDED THIS CONGRESS"}</td></tr>`;
     return;
   }
 
@@ -995,6 +1082,177 @@ function route() {
   if (m) renderDetail(m[1]);
 }
 
+// ── Caucus drift over time ────────────────────────────────────────────────────
+// Small multiples, two series each, rather than one four-series chart: party is
+// the hue, chamber is the panel. Per-member sparklines were measured and
+// rejected — the median member moves 0.02 points week over week, and the only
+// large movers are new arrivals thrashing on a small denominator. The signal is
+// at caucus level, which is all the trimmed snapshots carry.
+// The chart is honest only when the archive covers the term from its start. A
+// cumulative average that had already converged before archiving began is a flat
+// line by construction — that was the whole reason not to plot the 119th. So the
+// gate is coverage, not a Congress number: it switches itself on for the 121st
+// and every one after, and stays off for any term we only caught the tail of.
+const SERIES_KEYS = ["house_dem", "house_rep", "senate_dem", "senate_rep"];
+const TREND_MIN_POINTS   = 3;   // two points is a segment, not a trend
+const TREND_START_DAYS   = 90;  // the 30th rollcall lands ~day 32; this is margin
+const TREND_MAX_GAP_DAYS = 45;  // a longer silence isn't a complete record
+const DAY_MS = 86400000;
+
+// A Congress convenes January 3 of its odd year; the 1st in 1789.
+const congressConvened = n => Date.UTC(1789 + 2 * (n - 1), 0, 3);
+
+/** Dates covering `congress` from its start with no long gap, else null. */
+function completeCoverage(dates, congress) {
+  if (dates.length < TREND_MIN_POINTS) return null;
+  const t = dates.map(d => Date.parse(d + "T00:00:00Z")).sort((a, b) => a - b);
+  if ((t[0] - congressConvened(congress)) / DAY_MS > TREND_START_DAYS) return null;
+  for (let i = 1; i < t.length; i++)
+    if ((t[i] - t[i - 1]) / DAY_MS > TREND_MAX_GAP_DAYS) return null;
+  return dates;
+}
+
+async function renderTrend(congress) {
+  let index;
+  try {
+    index = await (await fetch("history/index.json")).json();
+  } catch { return; }             // no archive yet — section stays hidden
+
+  const dates = index.filter(e => e.congress === congress).map(e => e.date).sort();
+  if (dates.length < TREND_MIN_POINTS) return;
+
+  const snaps = (await Promise.all(dates.map(d =>
+    fetch(`history/${d}.json`).then(r => r.json()).catch(() => null)
+  ))).filter(Boolean);
+
+  // Coverage is judged on snapshots that actually scored somebody: the first
+  // weeks of a term archive fine but hold no values, and a run that failed
+  // leaves no snapshot at all.
+  const scored = snaps
+    .filter(s => SERIES_KEYS.some(k => typeof (s.summary?.[k] || {}).avg_independence === "number"))
+    .map(s => s.date);
+  if (!completeCoverage(scored, congress)) return;
+
+  const panels = [
+    { title: "House",  d: "house_dem",  r: "house_rep"  },
+    { title: "Senate", d: "senate_dem", r: "senate_rep" },
+  ].map(p => trendPanel(p, snaps)).filter(Boolean);
+  if (!panels.length) return;
+
+  // Count plotted points, not snapshots fetched: the first weeks of a Congress
+  // archive fine but score nobody, and those snapshots carry no series values.
+  const plotted = new Set(SERIES_KEYS.flatMap(k => seriesPoints(snaps, k).map(p => p.date))).size;
+
+  document.getElementById("trend-grid").innerHTML = panels.join("");
+  document.getElementById("trend-sub").textContent =
+    `Average independence score by caucus · ${plotted} weekly snapshots`;
+  document.getElementById("trend").style.display = "block";
+  wireTrendHover();
+}
+
+// A snapshot taken before anyone cleared MIN_VOTES has {} for every group, so
+// every point is optional. A series needs two real points to be a line at all.
+function seriesPoints(snaps, key) {
+  return snaps
+    .map(s => ({ date: s.date, v: (s.summary?.[key] || {}).avg_independence }))
+    .filter(p => typeof p.v === "number");
+}
+
+function trendPanel({ title, d, r }, snaps) {
+  const dem = seriesPoints(snaps, d), rep = seriesPoints(snaps, r);
+  if (dem.length < 2 && rep.length < 2) return null;
+
+  const W = 360, H = 170, P = { t: 12, r: 46, b: 24, l: 32 };
+  const all  = [...dem, ...rep];
+  const tOf  = p => Date.parse(p.date);
+  const t0   = Math.min(...all.map(tOf)), t1 = Math.max(...all.map(tOf));
+  const ymax = Math.max(1, Math.ceil(Math.max(...all.map(p => p.v)) * 1.15));
+  // Zero baseline: these are percentages where 0 is meaningful, and the caucuses
+  // differ enough that suppressing it would invent drama out of half a point.
+  const x = p => P.l + (t1 === t0 ? 0 : (tOf(p) - t0) / (t1 - t0)) * (W - P.l - P.r);
+  const y = v => H - P.b - (v / ymax) * (H - P.t - P.b);
+
+  const ticks = [0, ymax / 2, ymax].map(v => `
+    <line class="gridline" x1="${P.l}" y1="${y(v).toFixed(1)}" x2="${W - P.r}" y2="${y(v).toFixed(1)}"/>
+    <text class="axis-lbl" x="${P.l - 6}" y="${(y(v) + 3).toFixed(1)}" text-anchor="end">${v % 1 ? v.toFixed(1) : v}</text>`
+  ).join("");
+
+  // Direct labels ride the line ends. When the two caucus averages converge the
+  // labels would overlap, so nudge them apart — the dots stay on the real value.
+  const endY = pts => pts.length >= 2 ? y(pts[pts.length - 1].v) : null;
+  const [yd, yr] = [endY(dem), endY(rep)];
+  let [offD, offR] = [0, 0];
+  if (yd !== null && yr !== null && Math.abs(yd - yr) < 11) {
+    const push = (11 - Math.abs(yd - yr)) / 2;
+    [offD, offR] = yd <= yr ? [-push, push] : [push, -push];
+  }
+
+  const line = (pts, color, off) => {
+    if (pts.length < 2) return "";
+    const path = pts.map((p, i) => `${i ? "L" : "M"}${x(p).toFixed(1)},${y(p.v).toFixed(1)}`).join("");
+    const last = pts[pts.length - 1];
+    return `<path class="series" d="${path}" stroke="${color}"/>
+      <circle class="end-dot" cx="${x(last).toFixed(1)}" cy="${y(last.v).toFixed(1)}" r="4" fill="${color}"/>
+      <text class="end-lbl" x="${(x(last) + 9).toFixed(1)}" y="${(y(last.v) + 3.5 + off).toFixed(1)}">${last.v.toFixed(1)}</text>`;
+  };
+
+  const fmt = s => new Date(s + "T00:00:00Z").toLocaleDateString("en-US",
+    { month: "short", day: "numeric", timeZone: "UTC" });
+  const xLabels = [snaps[0], snaps[snaps.length - 1]].map((s, i) => `
+    <text class="axis-lbl" x="${i ? W - P.r : P.l}" y="${H - P.b + 14}"
+          text-anchor="${i ? "end" : "start"}">${fmt(s.date)}</text>`).join("");
+
+  return `<div class="trend-panel">
+    <h4>${title}</h4>
+    <svg viewBox="0 0 ${W} ${H}" role="img"
+         aria-label="${title} average independence score by caucus over time"
+         data-dem='${JSON.stringify(dem)}' data-rep='${JSON.stringify(rep)}'
+         data-geom='${JSON.stringify({ W, H, P, t0, t1, ymax })}'>
+      ${ticks}${xLabels}
+      <line class="crosshair" y1="${P.t}" y2="${H - P.b}"/>
+      ${line(dem, "var(--dem-line)", offD)}${line(rep, "var(--rep-line)", offR)}
+      <rect class="hit" x="${P.l}" y="${P.t}" width="${W - P.l - P.r}" height="${H - P.t - P.b}"/>
+    </svg>
+  </div>`;
+}
+
+function wireTrendHover() {
+  const tip = document.getElementById("trend-tip");
+  document.querySelectorAll(".trend-panel svg").forEach(svg => {
+    const dem = JSON.parse(svg.dataset.dem), rep = JSON.parse(svg.dataset.rep);
+    const { W, P, t0, t1 } = JSON.parse(svg.dataset.geom);
+    const hair = svg.querySelector(".crosshair");
+    const at = p => P.l + (t1 === t0 ? 0 : (Date.parse(p.date) - t0) / (t1 - t0)) * (W - P.l - P.r);
+    const dates = [...new Set([...dem, ...rep].map(p => p.date))].sort();
+
+    svg.querySelector(".hit").addEventListener("mousemove", e => {
+      const box = svg.getBoundingClientRect();
+      const sx  = (e.clientX - box.left) / box.width * W;     // viewBox units
+      const near = dates.reduce((a, b) =>
+        Math.abs(at({ date: b }) - sx) < Math.abs(at({ date: a }) - sx) ? b : a);
+      hair.setAttribute("x1", at({ date: near }));
+      hair.setAttribute("x2", at({ date: near }));
+      hair.style.opacity = ".4";
+
+      const row = (pts, color, name) => {
+        const p = pts.find(q => q.date === near);
+        return p ? `<div class="tip-row"><span><i style="background:${color}"></i> ${name}</span>
+                    <span>${p.v.toFixed(2)}</span></div>` : "";
+      };
+      tip.innerHTML = `<div class="tip-date">${near}</div>
+        ${row(dem, "var(--dem-line)", "Dem")}${row(rep, "var(--rep-line)", "Rep")}`;
+      tip.style.left    = Math.min(e.clientX + 14, innerWidth - 150) + "px";
+      tip.style.top     = (e.clientY - 12) + "px";
+      tip.style.opacity = "1";
+    });
+
+    svg.querySelector(".hit").addEventListener("mouseleave", () => {
+      hair.style.opacity = "0";
+      tip.style.opacity  = "0";
+    });
+  });
+}
+
 async function init() {
   const res  = await fetch("data.json");
   const data = await res.json();
@@ -1008,6 +1266,9 @@ async function init() {
 
   renderSummaryCards(data.summary);
   renderTable();
+  // Never let the trend block the page: it fetches the history archive, which
+  // may not exist yet, and it is the one section that is allowed to be absent.
+  renderTrend(data.congress).catch(err => console.warn("trend skipped:", err));
   route();
   window.addEventListener("hashchange", route);
 
