@@ -20,11 +20,13 @@ Each member receives an **Independence Score** — the average of:
 | 20–30%| Rebellious Streak |
 | 30%+  | Lone Wolf |
 
-**Attendance** is tracked separately and does *not* feed into the score. Over every vote a member was eligible for, `missed %` counts the ones they recorded as Present or Not Voting. Showing up is not the same thing as being independent, so the two numbers stay apart.
+**Attendance** is tracked separately and does *not* feed into the score. Over every rollcall their chamber held between their first and last recorded vote, `missed %` counts the ones with no Yea or Nay from them — Present, Not Voting, and the ones Voteview has no row for at all. That last case matters: the Speaker votes at his own discretion and is simply absent from about a quarter of House rollcalls, which a row count would score as perfect attendance. Bounding by first and last vote keeps members who arrived or left mid-congress from being charged for votes held outside their service. Showing up is not the same thing as being independent, so the two numbers stay apart.
 
 Yea and Nay each cover a range of Voteview cast codes (1–3 and 4–6); all of them are counted. Only decisive Yea/Nay votes go into the score denominators.
 
-Data sourced from [Voteview.com](https://voteview.com). Sanders and King are scored against the Democratic caucus they align with, but displayed as Independent.
+**Floor leaders are flagged, not excluded.** The Speaker plus each party's leader and whip in each chamber carry a `leadership` field; the table badges them and the filter can hide or isolate them. They schedule the votes they then vote on, so their loyalty is partly loyalty to an agenda they set themselves — the Speaker scores as the most loyal House Republican, on the subset of votes he chose to cast. Excluding them outright would drop the first names anyone looks up, so the call is left to the reader.
+
+Data sourced from [Voteview.com](https://voteview.com). Sanders and King are scored against the Democratic caucus they align with, but displayed as Independent. Anyone else Voteview codes as Independent has no caucus to measure deviation against and is left out of the index — the build prints their names so the omission is never silent. The President appears in Voteview's vote files (announced positions are recorded as cast codes) and is excluded entirely. So are the six non-voting delegates (DC, PR, VI, GU, AS, MP): barred from final-passage votes, their record is a Committee-of-the-Whole subset of a few dozen votes against a chamber norm of hundreds, and their 85%+ "missed" rate is the franchise rather than attendance. Ranking them beside voting members would compare two different things, so they are dropped from the index and from the party-cohesion tallies — the build prints their names.
 
 ## Setup
 

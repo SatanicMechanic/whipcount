@@ -1,6 +1,8 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -24,7 +26,7 @@ jobs:
 
       - name: Validate script imports and syntax
         run: |
-          python -c "
+          python3 -c "
           import ast
           ast.parse(open('analyze_votes.py').read())
           print('Syntax OK')
@@ -33,4 +35,4 @@ jobs:
           "
 
       - name: Run self-check
-        run: python tests/test_scoring.py
+        run: python3 tests/test_scoring.py

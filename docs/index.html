@@ -226,6 +226,14 @@
   }
 
   /* ── Controls ── */
+  .lead-badge {
+    background: rgba(255,255,255,.06);
+    color: var(--muted);
+    margin-left: .5rem;
+    font-size: .55rem;
+    text-transform: uppercase;
+  }
+
   .controls {
     position: relative;
     z-index: 1;
@@ -353,6 +361,12 @@
     white-space: normal;
     min-width: 180px;
   }
+
+  /* the anchor carries keyboard access and open-in-new-tab; the row click
+     handler is only a mouse convenience on top of it */
+  .td-name a { color: inherit; text-decoration: none; }
+  .td-name a:hover,
+  .td-name a:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
 
   .party-pill {
     display: inline-block;
@@ -683,6 +697,11 @@
       <option value="R">Republican</option>
       <option value="I">Independent</option>
     </select>
+    <select id="filter-leadership">
+      <option value="">Leaders included</option>
+      <option value="exclude">Hide party leaders</option>
+      <option value="only">Party leaders only</option>
+    </select>
     <select id="filter-label">
       <option value="">All labels</option>
       <option>Mindless Drone</option>
@@ -828,20 +847,24 @@ function filteredMembers() {
   const chamber = document.getElementById("filter-chamber").value;
   const party   = document.getElementById("filter-party").value;
   const label   = document.getElementById("filter-label").value;
+  const leaders = document.getElementById("filter-leadership").value;
 
   return allMembers.filter(m => {
     if (q && !m.name.toLowerCase().includes(q) && !(m.state||"").toLowerCase().includes(q)) return false;
     if (chamber && m.chamber !== chamber) return false;
     if (party  && m.party   !== party)   return false;
+    if (leaders === "exclude" && m.leadership) return false;
+    if (leaders === "only"    && !m.leadership) return false;
     if (label  && m.independence_label !== label) return false;
     return true;
   }).sort((a, b) => {
     let av = a[sortCol], bv = b[sortCol];
-    // sortDir -1 puts small values first here, so nulls go last in both directions
-    if (av == null) av = sortDir === 1 ? -Infinity : Infinity;
-    if (bv == null) bv = sortDir === 1 ? -Infinity : Infinity;
+    // sortDir 1 = ascending, for numbers and strings alike, so the arrow in
+    // updateSortHeaders is honest and nulls sort last in both directions
+    if (av == null) av = sortDir === 1 ? Infinity : -Infinity;
+    if (bv == null) bv = sortDir === 1 ? Infinity : -Infinity;
     if (typeof av === "string") return sortDir * av.localeCompare(bv);
-    return sortDir * (bv - av);
+    return sortDir * (av - bv);
   });
 }
 
@@ -863,7 +886,8 @@ function renderTable() {
     const lbl    = m.independence_label || "—";
 
     return `<tr class="clickable" data-icpsr="${esc(m.icpsr)}">
-      <td class="td-name">${esc(m.name)}</td>
+      <td class="td-name"><a href="#/member/${esc(m.icpsr)}">${esc(m.name)}</a>${
+        m.leadership ? `<span class="badge lead-badge">${esc(m.leadership)}</span>` : ""}</td>
       <td><span class="party-pill party-${esc(m.party)}">${esc(m.party)}</span></td>
       <td class="td-muted">${esc(m.state) || "—"}</td>
       <td class="td-muted">${m.chamber}</td>
@@ -897,6 +921,7 @@ async function renderDetail(icpsr) {
   const el   = document.getElementById("detail-view");
   const back = `<a class="back-link" href="#/">&larr; Back to all members</a>`;
   const idx  = allMembers.find(m => String(m.icpsr) === icpsr);
+  const stale = () => location.hash !== `#/member/${icpsr}`;
   el.innerHTML = back + `<div class="no-results">LOADING&hellip;</div>`;
   window.scrollTo(0, 0);
 
@@ -907,15 +932,18 @@ async function renderDetail(icpsr) {
     d = await res.json();
   } catch (err) {
     console.error(err);
+    if (stale()) return;
     el.innerHTML = back + `<div class="no-results">NO DETAIL DATA FOR ICPSR ${esc(icpsr)} (${esc(err.message)})</div>`;
     return;
   }
-  if (location.hash !== `#/member/${icpsr}`) return; // stale response
+  if (stale()) return;
 
   const missed  = d.missed || {};
   const unw     = idx && idx.party_unity_pct != null ? 100 - idx.party_unity_pct : null;
   const wtd     = idx ? idx.weighted_partisan_deviation_pct : null;
   const dissents = d.dissents || [];
+  // the per-member file caps its list; dissent_count in the index is the true total
+  const total = idx && idx.dissent_count != null ? idx.dissent_count : dissents.length;
 
   const rows = dissents.map(v => `<tr>
       <td class="td-muted">${esc(v.date)}</td>
@@ -928,7 +956,8 @@ async function renderDetail(icpsr) {
 
   el.innerHTML = back + `
     <h2>${esc(d.name)}</h2>
-    <div class="detail-sub">${esc(d.party)} · ${esc(d.state)} · ${esc(d.chamber)} · ICPSR ${esc(d.icpsr)}</div>
+    <div class="detail-sub">${esc(d.party)} · ${esc(d.state)} · ${esc(d.chamber)}${
+      d.leadership ? " · " + esc(d.leadership) : ""} · ICPSR ${esc(d.icpsr)}</div>
     <div class="detail-stats">
       <div class="stat">
         <div class="card-label">Missed Votes</div>
@@ -947,8 +976,8 @@ async function renderDetail(icpsr) {
       </div>
       <div class="stat">
         <div class="card-label">Dissenting Votes</div>
-        <div class="stat-val">${dissents.length}</div>
-        <div class="stat-note">most recent first</div>
+        <div class="stat-val">${total}</div>
+        <div class="stat-note">${total > dissents.length ? `showing ${dissents.length} most recent` : "most recent first"}</div>
       </div>
     </div>
     ${dissents.length ? `<table>
@@ -991,7 +1020,7 @@ async function init() {
   document.getElementById("app").style.display     = "block";
 
   // Controls
-  ["search","filter-chamber","filter-party","filter-label"].forEach(id =>
+  ["search","filter-chamber","filter-party","filter-label","filter-leadership"].forEach(id =>
     document.getElementById(id).addEventListener("input", renderTable)
   );
 

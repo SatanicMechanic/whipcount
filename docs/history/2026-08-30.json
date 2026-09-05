@@ -1,16 +1,15 @@
 {
   "date": "2026-08-30",
-  "updated_at": "2026-08-30T23:12:22Z",
   "congress": 119,
   "summary": {
     "all": {
-      "count": 549,
-      "avg_independence": 4.7,
+      "count": 548,
+      "avg_independence": 4.71,
       "min_independence": 0.0,
       "max_independence": 34.02,
-      "avg_missed_pct": 3.42,
+      "avg_missed_pct": 3.43,
       "label_dist": {
-        "Mindless Drone": 86,
+        "Mindless Drone": 85,
         "Yes Man": 322,
         "Reluctant Rebel": 64,
         "Frequent Dissenter": 57,
@@ -3677,14 +3676,6 @@
       "chamber": "House",
       "independence_score": 2.75,
       "missed_pct": 3.11
-    },
-    {
-      "icpsr": 99912,
-      "name": "TRUMP, Donald John",
-      "party": "R",
-      "chamber": "President",
-      "independence_score": 0.33,
-      "missed_pct": 0.0
     },
     {
       "icpsr": 42500,

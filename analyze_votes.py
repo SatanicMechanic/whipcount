@@ -15,10 +15,12 @@ from pathlib import Path
 # ponytail: hardcoded for the 119th Congress (2025-2027); bump manually when it ends
 CONGRESS = 119
 VOTEVIEW_BASE = "https://voteview.com/static/data/out"
-# Point these at a fixture/scratch dir to run offline (tests/test_scoring.py does).
+# VOTES_DATA_DIR relocates the CSV directory. VOTES_OFFLINE=1 skips the download
+# and reuses whatever is already there. They are separate on purpose: relocating
+# the cache must never silently stop fetching and republish stale data.
 DATA_DIR = Path(os.environ.get("VOTES_DATA_DIR", "data"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
-OFFLINE = "VOTES_DATA_DIR" in os.environ
+OFFLINE = os.environ.get("VOTES_OFFLINE") == "1"
 
 FILES = [
     f"{VOTEVIEW_BASE}/{kind}/{ch}{CONGRESS}_{kind}.csv"
@@ -32,15 +34,17 @@ MAX_DISSENTS = 500   # per-member detail file cap
 # ── Download ───────────────────────────────────────────────────────────────────
 # ponytail: no local cache — CI checks out fresh and gitignores data/, so a
 # conditional-GET cache never survives between runs. Just fetch every time.
-if not OFFLINE:
+if OFFLINE:
+    print(f"! OFFLINE — reusing the CSVs already in {DATA_DIR}, downloading nothing")
+else:
     import requests
 
-for url in [] if OFFLINE else FILES:
-    dest = DATA_DIR / Path(url).name
-    r = requests.get(url, timeout=60)
-    r.raise_for_status()
-    dest.write_bytes(r.content)
-    print(f"Downloaded: {url}")
+    for url in FILES:
+        dest = DATA_DIR / Path(url).name
+        r = requests.get(url, timeout=60)
+        r.raise_for_status()
+        dest.write_bytes(r.content)
+        print(f"Downloaded: {url}")
 
 def read_csv(name):
     with open(DATA_DIR / name, newline="", encoding="utf-8") as f:
@@ -53,9 +57,40 @@ CAUCUS        = {"100": "D", "200": "R"}
 DISPLAY_PARTY = {"100": "D", "200": "R", "328": "I"}
 DEM_CAUCUSING_INDEPENDENTS = {29147, 41300}  # Sanders (VT), King (ME)
 
+# Non-voting delegates. They are barred from final-passage votes, so their
+# record is a Committee-of-the-Whole subset — tens of votes against a chamber
+# norm of hundreds — and their "missed" rate is the franchise, not attendance.
+# Ranking them against voting members compares two different things, so they
+# are dropped outright (unlike leaders, who are only flagged).
+DELEGATE_STATES = {"DC", "PR", "VI", "GU", "AS", "MP"}
+
+# Floor leaders schedule the votes they then vote on, so their loyalty is partly
+# loyalty to their own agenda. Flagged rather than excluded — they are the first
+# names a reader looks up. Update when the leadership changes.
+LEADERSHIP = {
+    21727: "Speaker",          # Johnson (R-LA)
+    20759: "Majority Leader",  # Scalise (R-LA)
+    21531: "Majority Whip",    # Emmer (R-MN)
+    21343: "Minority Leader",  # Jeffries (D-NY)
+    21375: "Minority Whip",    # Clark (D-MA)
+    29754: "Majority Leader",  # Thune (R-SD)
+    40707: "Majority Whip",    # Barrasso (R-WY)
+    14858: "Minority Leader",  # Schumer (D-NY)
+    15021: "Minority Whip",    # Durbin (D-IL)
+}
+
 members_all = {}
+delegates = []
 for ch in ("H", "S"):
     for m in read_csv(f"{ch}{CONGRESS}_members.csv"):
+        # Voteview carries the president's announced positions as ordinary
+        # cast_code rows under chamber "President". They are not votes: drop the
+        # row so they reach neither the party cohesion tally nor the index.
+        if m["chamber"] not in ("House", "Senate"):
+            continue
+        if m["state_abbrev"] in DELEGATE_STATES:
+            delegates.append(m["bioname"])
+            continue
         icpsr = int(m["icpsr"])
         m["caucus"] = "D" if icpsr in DEM_CAUCUSING_INDEPENDENTS else CAUCUS.get(m["party_code"], "O")
         m["display_party"] = DISPLAY_PARTY.get(m["party_code"], "O")
@@ -71,20 +106,41 @@ def normalize(code):
 
 # ponytail: whole file in memory — 119th is ~370k rows / ~25MB. Stream if a
 # future congress makes that hurt.
-votes = []           # (chamber, rollnumber, icpsr, cast) for decisive votes only
-eligible = Counter()  # icpsr -> rows where they were a member
-missed = Counter()    # icpsr -> present/not-voting
+votes = []                     # (chamber, rollnumber, icpsr, cast) — decisive only
+rolls_seen = defaultdict(set)  # chamber -> every rollnumber it held
+span = {}                      # icpsr -> [chamber, first roll, last roll] on record
+cast_count = Counter()         # icpsr -> decisive votes actually cast
+
 for ch in ("H", "S"):
     for v in read_csv(f"{ch}{CONGRESS}_votes.csv"):
+        chamber, roll = v["chamber"], int(v["rollnumber"])
+        rolls_seen[chamber].add(roll)
         code = normalize(int(v["cast_code"]))
         if code == 0:
             continue
         icpsr = int(v["icpsr"])
-        eligible[icpsr] += 1
-        if code in (1, 6):
-            votes.append((v["chamber"], int(v["rollnumber"]), icpsr, code))
+        if icpsr in span:
+            s = span[icpsr]
+            s[1], s[2] = min(s[1], roll), max(s[2], roll)
         else:
-            missed[icpsr] += 1
+            span[icpsr] = [chamber, roll, roll]
+        if code in (1, 6):
+            cast_count[icpsr] += 1
+            votes.append((chamber, roll, icpsr, code))
+
+# Attendance denominator: every rollcall the chamber held between a member's
+# first and last appearance. Voteview drops the row entirely when a member
+# doesn't vote rather than coding it 9 — the Speaker is absent from ~23% of
+# House rollcalls this way — so counting rows would hand him perfect attendance.
+# Bounding by first/last keeps mid-congress arrivals and departures from being
+# charged for votes held outside their service.
+# ponytail: a member absent for their own first or last rollcalls has that
+# stretch fall outside the span, undercounting their misses by those few votes.
+eligible = Counter()  # icpsr -> rollcalls held while they served
+missed = Counter()    # icpsr -> those with no Yea/Nay recorded
+for icpsr, (chamber, first, last) in span.items():
+    eligible[icpsr] = sum(1 for r in rolls_seen[chamber] if first <= r <= last)
+    missed[icpsr] = eligible[icpsr] - cast_count[icpsr]
 
 # ── Rollcall context ───────────────────────────────────────────────────────────
 rollcalls = {}
@@ -213,6 +269,7 @@ for icpsr, cast in by_member.items():
         "caucus":              party,
         "state":               m["state_abbrev"],
         "chamber":             m["chamber"],
+        "leadership":          LEADERSHIP.get(icpsr),
         "district":            int(m["district_code"]) if m["chamber"] == "House" else None,
         "independence_score":  pct(ind),
         "independence_label":  independence_label(ind * 100) if ind is not None else None,
@@ -278,7 +335,7 @@ for stale in member_dir.glob("*.json"):
 for r in members:
     (member_dir / f"{r['icpsr']}.json").write_text(json.dumps({
         "icpsr": r["icpsr"], "name": r["name"], "party": r["party"],
-        "state": r["state"], "chamber": r["chamber"],
+        "state": r["state"], "chamber": r["chamber"], "leadership": r["leadership"],
         "dissents": dissents_by_member[r["icpsr"]][:MAX_DISSENTS],
         "missed": {"eligible": r["eligible_votes"], "missed": r["missed_votes"],
                    "pct": r["missed_pct"]},
@@ -288,9 +345,10 @@ for r in members:
 hist_dir = docs / "history"
 hist_dir.mkdir(parents=True, exist_ok=True)
 today = now.strftime("%Y-%m-%d")
+# No updated_at in the snapshot: it would differ on every run and make a same-day
+# re-run look like new history. "date" identifies it; data.json has the build time.
 (hist_dir / f"{today}.json").write_text(json.dumps({
     "date": today,
-    "updated_at": output["updated_at"],
     "congress": CONGRESS,
     "summary": summary,
     "members": [{k: r[k] for k in
@@ -299,6 +357,15 @@ today = now.strftime("%Y-%m-%d")
 }, indent=2))
 (hist_dir / "index.json").write_text(json.dumps(
     sorted(p.stem for p in hist_dir.glob("*.json") if p.name != "index.json")))
+
+# A party code we don't map (Voteview's 328 for anyone who isn't Sanders or King)
+# drops that member from the index entirely. Name them rather than quietly shrink.
+unscored = sorted(m["bioname"] for m in members_all.values()
+                  if m["caucus"] not in ("D", "R"))
+if unscored:
+    print(f"! Unscored — no mapped caucus: {', '.join(unscored)}")
+if delegates:
+    print(f"! Excluded — non-voting delegates: {', '.join(sorted(delegates))}")
 
 print(f"✓ Wrote {len(members)} members to {docs / 'data.json'}")
 print(f"  Per-member files: {len(members)} · History snapshot: {today}")
