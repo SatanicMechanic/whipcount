@@ -96,6 +96,8 @@
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+  html { scroll-behavior: smooth; }
+
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -141,6 +143,25 @@
     margin: 0 auto;
   }
 
+  /* Announces one methodology change to people who saw the old numbers, then
+     retires itself on a date. Deliberately not permanent furniture. */
+  .banner {
+    position: relative; z-index: 2;
+    display: flex; align-items: center; gap: 1rem;
+    max-width: 1400px; margin: 0 auto; padding: .7rem 2rem;
+    font-size: .8rem; color: var(--text);
+    background: rgba(240,192,64,.1);
+    border-bottom: 1px solid rgba(240,192,64,.25);
+  }
+  .banner a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  .banner-x {
+    margin-left: auto; flex-shrink: 0;
+    background: none; border: 0; cursor: pointer;
+    color: var(--muted); font-size: 1.1rem; line-height: 1; padding: .2rem .4rem;
+  }
+  .banner-x:hover { color: var(--text); }
+  @media (max-width: 700px) { .banner { padding: .7rem 1rem; } }
+
   .eyebrow {
     font-family: 'DM Mono', monospace;
     font-size: .7rem;
@@ -167,6 +188,21 @@
     max-width: 600px;
     line-height: 1.6;
   }
+
+  /* The methodology lives under the table; this is the way to it. Inline in the
+     subtitle rather than a nav bar — one link does not need furniture. */
+  .jump {
+    display: inline-block;
+    margin-left: .35rem;
+    font-family: 'DM Mono', monospace;
+    font-size: .72rem;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(240,192,64,.4);
+    white-space: nowrap;
+  }
+  .jump:hover { text-decoration-color: var(--accent); }
 
   .updated {
     margin-top: 1rem;
@@ -803,12 +839,18 @@
 </div>
 
 <div id="app">
+  <div class="banner" id="banner" hidden>
+    <span>The scores and labels changed on 7 September &mdash; the index now measures
+    party discipline alone. <a href="changes.html">What changed and why</a></span>
+    <button type="button" class="banner-x" id="banner-x" aria-label="Dismiss">&times;</button>
+  </div>
   <header>
     <div class="header-inner">
       <div class="eyebrow" id="eyebrow"></div>
       <h1>Mavericks <span>&</span> Sycophants</h1>
       <p class="subtitle">The U.S. Congressional Independence Index: how often each
-      member votes against their own party, weighted by how united that party was.</p>
+      member votes against their own party, weighted by how united that party was.
+      <a class="jump" href="#about">How the score works &darr;</a></p>
       <div class="updated" id="updated-at"></div>
     </div>
   </header>
@@ -904,7 +946,7 @@
   </div>
   <div class="trend-tip" id="trend-tip"></div>
 
-  <div class="intro">
+  <div class="intro" id="about">
     <div class="intro-block">
       <h2>Welcome</h2>
       <p>This site tracks how often members of Congress vote as part of the two-headed
@@ -1453,6 +1495,21 @@ async function init() {
   // Options come from the tier table for the same reason the legend does: one
   // rename in analyze_votes.py, and nothing here needs touching.
   document.getElementById("filter-label").insertAdjacentHTML("beforeend", tierOptions());
+
+  // Short-lived by design: it stops appearing on its own, so nobody has to
+  // remember to take it down. Bump both constants for the next change.
+  const CHANGED_ON = "2026-09-07", BANNER_UNTIL = "2026-10-05";
+  try {
+    if (new Date().toISOString().slice(0, 10) < BANNER_UNTIL &&
+        localStorage.getItem("seen-changes") !== CHANGED_ON) {
+      const banner = document.getElementById("banner");
+      banner.hidden = false;
+      document.getElementById("banner-x").addEventListener("click", () => {
+        banner.hidden = true;
+        try { localStorage.setItem("seen-changes", CHANGED_ON); } catch { /* private mode */ }
+      });
+    }
+  } catch { /* localStorage can throw on access alone */ }
 
   document.getElementById("eyebrow").textContent =
     `${data.congress}th Congress · Updated weekly`;

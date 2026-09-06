@@ -4,7 +4,7 @@ A weekly-updated dashboard scoring every member of Congress on their independenc
 
 **Live site:** <https://congressionalindependence.deathbutt.org>
 
-Nothing here is pinned to one Congress. Which one is in scope is derived from the date — the 1st convened in 1789 and each runs two years — so the weekly job rolls itself over on January 3 of every odd year. A Congress convenes weeks before Voteview publishes its first files, so until that data lands the build falls back one Congress and keeps serving the outgoing one, then switches on its own. `VOTES_CONGRESS` pins a specific one for rebuilding an old term.
+Nothing here is pinned to one Congress. Which one is in scope is derived from the date — the 1st convened in 1789 and each runs two years — so the weekly job rolls itself over on January 3 of every odd year. A Congress convenes weeks before Voteview publishes its first files, so until that data lands the build falls back one Congress and keeps serving the outgoing one, then switches on its own. `VOTES_CONGRESS` pins a specific one for rebuilding an old term; `party_code` is normalised on the way in because older files ship it as a float (`200.0`), which would otherwise leave every member of an older Congress uncaucused and unscored.
 
 ## How scores work
 
@@ -16,12 +16,14 @@ The consensus column carries its denominator (`62% of 67`) because the chambers 
 
 | Tier | Score | Label |
 |------|-------|-------|
-| 0 | < 1%  | Mindless Drone |
-| 1 | 1–5%  | Bobblehead |
-| 2 | 5–10% | Squeaky Wheel |
-| 3 | 10–20%| Loose Cannon |
-| 4 | 20–30%| Heretic |
-| 5 | 30%+  | Lone Wolf |
+| 0 | < 0.5%   | Mindless Drone |
+| 1 | 0.5–1.5% | Bobblehead |
+| 2 | 1.5–4%   | Squeaky Wheel |
+| 3 | 4–8%     | Free Agent |
+| 4 | 8–20%    | Heretic |
+| 5 | 20%+     | Lone Wolf |
+
+The cuts were measured against the 117th, 118th and 119th: every band is occupied in all three, the top stays rare (5–7 members a term), and the most loyal band is still the largest so the pile-up at zero remains visible. The previous cuts were calibrated for a score that averaged in consensus deviation, and against the current one they left ~90% of Congress in two bands. Every name reads the same direction — the scale disparages loyalty and credits deviation — which is why tier 3 is `Free Agent` and not `Loose Cannon`, the one rung that insulted the dissenter.
 
 The bands live in exactly one place — `TIERS` in `analyze_votes.py` — and ship in `data.json` as `tiers`. The site builds its scale legend, filter options, histogram axis, ranges and every badge colour from that table, so renaming a band is a one-line edit and the browser test reads the names back out of the Python to prove it. Members carry `independence_tier` — the id only, since `tiers` is in the same file and a stored copy of a derived name is one more thing that can drift. Snapshot distributions are archived as `label_dist`, a list indexed by tier id rather than a dict keyed by name: the archive is the one thing that cannot be regenerated, and it has to survive a rename.
 
@@ -33,6 +35,8 @@ The table shows nine columns; `party_unity_pct` and the per-vote detail stay in 
 
 **Floor leaders are flagged, not excluded.** The Speaker plus each party's leader and whip in each chamber carry a `leadership` field; the table badges them and the filter can hide or isolate them. They schedule the votes they then vote on, so their loyalty is partly loyalty to an agenda they set themselves — in the 119th the Speaker came out the single most loyal member of his caucus, on the subset of votes he chose to cast. Excluding them outright would drop the first names anyone looks up, so the call is left to the reader.
 
+`docs/changes.html` is a standalone page explaining a methodology change to people who saw the previous numbers, linked from a banner that retires itself on a date set in `init()`. It is not a running changelog — it gets rewritten the next time the numbers move for a reason a reader would notice.
+
 ## Self-checks
 
 Three suites, no dependencies between them and none installed for them:
@@ -41,7 +45,7 @@ Three suites, no dependencies between them and none installed for them:
 |---|---|
 | `python3 tests/test_scoring.py` | The scoring pipeline against a synthetic Voteview fixture, plus every upstream-drift path |
 | `node tests/test_site.mjs` | The page's functions against a stub DOM — sorting, filtering, the trend gate, the tier table |
-| `node tests/test_browser.mjs` | The real page in a real browser: CSP violations, console errors, failed requests, what actually rendered |
+| `node tests/test_browser.mjs` | The real page in a real browser: CSP violations, console errors, failed requests, what actually rendered, and the changes page |
 
 The browser check exists because the other two cannot see what the browser decides. It builds the fixture site, serves it over HTTP so `'self'` means something, and drives a headless Chromium over the remote-debugging protocol using node's built-in WebSocket — no browser-automation dependency and no downloaded browser binaries. It picks up Chrome, Chromium, Edge or Brave, in that order; `CHROME_PATH` overrides. It gates the weekly publish, which force-pushes the site with nobody watching.
 

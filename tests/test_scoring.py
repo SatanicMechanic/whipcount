@@ -149,8 +149,8 @@ def check_tier_boundaries():
     Call after check_congress_rollover, which is what imports the module."""
     from importlib import import_module
     tier = import_module("analyze_votes").independence_tier
-    for score, want in ((0.0, 0), (0.99, 0), (1.0, 1), (4.99, 1), (5.0, 2),
-                        (10.0, 3), (20.0, 4), (30.0, 5), (100.0, 5)):
+    for score, want in ((0.0, 0), (0.49, 0), (0.5, 1), (1.49, 1), (1.5, 2),
+                        (4.0, 3), (8.0, 4), (19.99, 4), (20.0, 5), (100.0, 5)):
         assert tier(score) == want, f"{score}: got {tier(score)}, want {want}"
 
 
@@ -469,7 +469,7 @@ def main():
         assert by_icpsr[1]["independence_score"] == 0.0
         assert by_icpsr[1]["independence_tier"] == 0
         assert by_icpsr[9]["independence_score"] == 3.39     # == its weighted partisan
-        assert by_icpsr[9]["independence_tier"] == 1
+        assert by_icpsr[9]["independence_tier"] == 2      # 3.39 lands in 1.5-4%
         for i, cons_dev in ((4, 10.0), (5, 20.0)):
             assert by_icpsr[i]["consensus_deviation_pct"] == cons_dev
             assert by_icpsr[i]["independence_score"] == 0.0, by_icpsr[i]

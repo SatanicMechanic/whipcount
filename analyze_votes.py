@@ -142,6 +142,21 @@ def as_int(raw, field, context):
         return None
 
 
+def party_code(raw):
+    """Normalise Voteview's party_code, which older files ship as a float.
+
+    The 117th writes "200.0" where the 119th writes "200", so a plain string match
+    leaves every member of an older Congress uncaucused and unscored — and
+    VOTES_CONGRESS is the documented way to rebuild an old term. A value that is
+    not numeric at all passes through untouched, to be caught by the check against
+    KNOWN_PARTY_CODES rather than swallowed here.
+    """
+    try:
+        return str(int(float(raw)))
+    except (ValueError, TypeError):
+        return raw
+
+
 def read_csv(name, kind):
     with open(DATA_DIR / name, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
@@ -209,6 +224,7 @@ for ch in ("H", "S"):
             note_drift(("chamber", m["chamber"]),
                        f"members: unrecognised chamber {m['chamber']!r} "
                        f"(e.g. {m['bioname']}) — skipped")
+        m["party_code"] = party_code(m["party_code"])
         if m["party_code"] not in KNOWN_PARTY_CODES:
             note_drift(("party_code", m["party_code"]),
                        f"members: unrecognised party_code {m['party_code']!r} "
@@ -378,12 +394,18 @@ for key, parties in tally.items():
 # "max" is exclusive: a score landing exactly on it takes the next tier up.
 # Everything downstream keys on the id, not the name: history snapshots archive
 # label_dist by tier, so a rename can never desync an old snapshot from a new one.
+# Cuts measured against the 117th, 118th and 119th: every band is occupied in all
+# three, the top stays a genuine rarity (5-7 members), and the most loyal band is
+# still the largest so the pile-up at zero remains the finding. The old cuts were
+# calibrated for the blended score and left ~90% of Congress in two bands.
+# Names all read the same direction — the scale disparages loyalty and credits
+# deviation, so no rung may insult the dissenter ("Loose Cannon" did).
 TIERS = [
-    {"id": 0, "max": 1.0,  "name": "Mindless Drone"},
-    {"id": 1, "max": 5.0,  "name": "Bobblehead"},
-    {"id": 2, "max": 10.0, "name": "Squeaky Wheel"},
-    {"id": 3, "max": 20.0, "name": "Loose Cannon"},
-    {"id": 4, "max": 30.0, "name": "Heretic"},
+    {"id": 0, "max": 0.5,  "name": "Mindless Drone"},
+    {"id": 1, "max": 1.5,  "name": "Bobblehead"},
+    {"id": 2, "max": 4.0,  "name": "Squeaky Wheel"},
+    {"id": 3, "max": 8.0,  "name": "Free Agent"},
+    {"id": 4, "max": 20.0, "name": "Heretic"},
     {"id": 5, "max": None, "name": "Lone Wolf"},
 ]
 

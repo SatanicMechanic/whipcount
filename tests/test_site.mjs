@@ -120,10 +120,14 @@ check("counts and shares shown", distGrid.includes("90 · 90%") && distGrid.incl
 check("empty bins render at zero, not NaN", distGrid.includes("height:0%") && !/NaN|undefined/.test(distGrid));
 check("subtitle counts scored members", els["hist-sub"].textContent.startsWith("100 scored members"));
 check("empty bins draw nothing at all", /height:0%;min-height:0px/.test(distGrid));
+// Ranges are derived from the same cut points the tiers carry, so re-thresholding
+// cannot leave a stale literal here. The first is escaped — a bare "<0.5%" would
+// start a tag.
+const firstRange = `&lt;${+TIERS[0].max}%`, lastRange = `${+TIERS.at(-2).max}%+`;
 check("axis carries chip, range and every tier name",
   TIERS.every(t => els["hist-x"].innerHTML.includes(t.name)) &&
-  els["hist-x"].innerHTML.includes("&lt;1%") &&   // escaped: a bare "<1%" is a tag start
-  els["hist-x"].innerHTML.includes("30%+"),
+  els["hist-x"].innerHTML.includes(firstRange) &&
+  els["hist-x"].innerHTML.includes(lastRange),
   els["hist-x"].innerHTML.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
 check("bars have a text alternative", /Mindless Drone 90/.test(els["hist-grid"].attrs["aria-label"]));
 check("filter options are generated from the same table",

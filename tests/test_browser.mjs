@@ -75,7 +75,8 @@ function buildSite() {
   python([path.join(ROOT, "analyze_votes.py")],
     { VOTES_OFFLINE: "1", VOTES_CONGRESS: "119", VOTES_DATA_DIR: data,
       VOTES_OUT_DIR: site, VOTES_SCHEMA_REPORT: path.join(tmp, "drift.txt") });
-  fs.copyFileSync(path.join(ROOT, "docs", "index.html"), path.join(site, "index.html"));
+  for (const f of ["index.html", "changes.html"])
+    fs.copyFileSync(path.join(ROOT, "docs", f), path.join(site, f));
   fs.cpSync(path.join(ROOT, "docs", "fonts"), path.join(site, "fonts"), { recursive: true });
   return { tmp, site };
 }
@@ -241,6 +242,10 @@ const view = await evaluate(`JSON.stringify({
   badges: document.querySelectorAll("#tbody .badge-dot").length,
   sticky: getComputedStyle(document.querySelector("#main-table thead th")).position,
   ghost:  !!document.querySelector(".trend-ghost"),
+  banner: !document.getElementById("banner").hidden,
+  blink:  document.querySelector("#banner a")?.getAttribute("href") ?? "",
+  jump:   (() => { const a = document.querySelector("a.jump");
+            return !!a && !!document.querySelector(a.getAttribute("href")); })(),
   trend:  document.getElementById("trend").dataset.state ?? "",
   hpad:   document.body.scrollWidth <= document.documentElement.clientWidth,
 })`).then(JSON.parse);
@@ -253,6 +258,17 @@ check("every row carries a tier dot", view.rows > 0 && view.badges === view.rows
   `${view.badges} dots for ${view.rows} rows`);
 check("header is sticky at desktop width", view.sticky === "sticky", view.sticky);
 check("trend shows its ghost, not a chart", view.ghost && view.trend !== "ready");
+check("the explainer link points at something that exists", view.jump);
+// A fresh profile has no dismissal stored and the retire date has not passed, so
+// a first-time visitor must see it.
+check("change banner shown to a first-time visitor", view.banner);
+check("banner links to the changes page", view.blink === "changes.html", view.blink);
+
+await evaluate(`document.getElementById("banner-x").click()`);
+check("dismissing the banner hides it",
+  await evaluate(`document.getElementById("banner").hidden === true`));
+check("dismissal is remembered",
+  await evaluate(`localStorage.getItem("seen-changes")`) !== null);
 check("page does not scroll sideways", view.hpad);
 
 // ── The member route ─────────────────────────────────────────────────────────
@@ -276,6 +292,28 @@ await evaluate(`location.hash = "#/member/${icpsr}abc"`);
 await sleep(200);
 check("a malformed member hash falls back to the list",
   await evaluate(`document.getElementById("main-view").style.display !== "none"`));
+
+// ── The changes page ─────────────────────────────────────────────────────────
+const before = cdp.events.length;
+await cdp.send("Page.navigate", { url: `${origin}/changes.html` });
+await sleep(800);
+const changes = await evaluate(`JSON.stringify({
+  title: document.title,
+  heads: document.querySelectorAll("h2").length,
+  back:  document.querySelector("a.back")?.getAttribute("href") ?? "",
+  wide:  document.body.scrollWidth <= document.documentElement.clientWidth,
+})`).then(JSON.parse);
+const newLogs = cdp.events.slice(before).filter(e => e.method === "Log.entryAdded")
+  .map(e => e.params.entry);
+const newFailed = cdp.events.slice(before)
+  .filter(e => e.method === "Network.loadingFailed" ||
+    (e.method === "Network.responseReceived" && e.params.response.status >= 400));
+check("changes page renders", changes.heads >= 5 && /What changed/.test(changes.title),
+  `${changes.heads} sections`);
+check("changes page links back to the index", changes.back === "./", changes.back);
+check("changes page is clean", newLogs.length === 0 && newFailed.length === 0,
+  newLogs.map(l => l.text).join(" | "));
+check("changes page does not scroll sideways", changes.wide);
 
 cdp.close();
 chrome.kill();
