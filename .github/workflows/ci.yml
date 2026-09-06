@@ -27,7 +27,7 @@ jobs:
           node-version: '22'   # the browser check drives Chrome over node's built-in WebSocket
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install --require-hashes -r requirements.txt
 
       - name: Validate script imports and syntax
         run: |

@@ -1,11 +1,18 @@
 version: 2
 updates:
   # Python dependencies
+  # Cooldown, not semver gating: requirements.txt is hash-pinned, which proves
+  # the artifact matches what was locked but says nothing about whether that
+  # version is malicious. A compromised maintainer ships bad patches as readily
+  # as bad majors, so the delay — time for the ecosystem to notice — is the
+  # control that hashes cannot provide.
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
+    cooldown:
+      default-days: 2
     open-pull-requests-limit: 5
     groups:
       python-deps:
@@ -18,4 +25,6 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+    cooldown:
+      default-days: 2
     open-pull-requests-limit: 5

@@ -23,8 +23,14 @@ jobs:
         with:
           python-version: '3.11'
 
+      # --require-hashes, no fallback: this job carries contents: write and
+      # executes what it installs, unattended, every Monday. A hash mismatch
+      # means the artifact on the index is not the one we locked — that must
+      # fail the run, not get retried unverified. Regenerate deliberately with
+      # `uv pip compile requirements.in --generate-hashes --python-version 3.11
+      # -o requirements.txt`, never by loosening this flag.
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install --require-hashes -r requirements.txt
 
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
