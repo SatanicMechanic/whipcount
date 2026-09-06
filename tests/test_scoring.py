@@ -208,6 +208,37 @@ def check_schema_drift(tmp):
     assert code == 0, "an unknown chamber should still publish"
     assert "chamber 'Territory'" in report and "party_code '999'" in report, report
 
+    # A chamber Voteview renames on the votes side keeps rolls_seen and span
+    # mutually consistent, so attendance survives — but it stops matching the
+    # rollcalls file and every dissent silently loses its bill context.
+    def odd_vote_chamber(d):
+        rewrite(d / "H119_votes.csv",
+                lambda ls: [ls[0]] + [l.replace(",House,", ",US House,") for l in ls[1:]])
+    code, report = run_script(fixture(odd_vote_chamber), tmp / "o4", tmp / "r4.txt")
+    assert code == 0, "an unknown chamber in votes.csv should still publish"
+    assert "chamber 'US House'" in report, report
+
+    # A numeric column that stops being numeric must file a report and keep
+    # publishing. An uncaught ValueError writes no schema-drift.txt at all, so CI
+    # files no issue and skips the publish — the site freezes with no signal.
+    def non_numeric(csv_name, col, value):
+        def fn(ls):
+            f = ls[1].split(",")
+            f[col] = value
+            return ls[:1] + [",".join(f)] + ls[2:]
+        return lambda d: rewrite(d / csv_name, fn)
+
+    for csv_name, col, value, want in (
+            ("H119_votes.csv",   2, "N/A",      "votes.rollnumber"),
+            ("H119_votes.csv",   3, "?",        "votes.icpsr"),
+            ("H119_votes.csv",   4, "yes",      "votes.cast_code"),
+            ("H119_members.csv", 2, "x",        "members.icpsr")):
+        n = next(check_schema_drift.n)
+        code, report = run_script(fixture(non_numeric(csv_name, col, value)),
+                                  tmp / f"on{n}", tmp / f"rn{n}.txt")
+        assert code == 0, f"{want}: a non-numeric value should still publish"
+        assert want in report and repr(value) in report, report
+
     # A Speaker we can't match to exactly one member must be reported, not
     # guessed at and not fatal — the rest of the index is still correct.
     def unmatchable_speaker(d):
@@ -216,6 +247,22 @@ def check_schema_drift(tmp):
     code, report = run_script(fixture(unmatchable_speaker), tmp / "o5", tmp / "r5.txt")
     assert code == 0, "an unmatchable Speaker should still publish"
     assert "Speaker" in report and "NOBODY (ZZ)" in report, report
+
+    # A snapshot whose name isn't a date, or whose "date" disagrees with its
+    # name, is the shape a malicious pull request would take — docs/history/ is
+    # committed to main and the date is the one snapshot field the site renders.
+    d = tmp / "misnamed"; d.mkdir(); build_fixture(d)
+    out = tmp / "o7"; (out / "history").mkdir(parents=True)
+    (out / "history" / "notadate.json").write_text('{"date": "notadate", "congress": 119}')
+    (out / "history" / "2020-01-03.json").write_text(
+        '{"date": "Jan 1 2026 (<img src=x onerror=alert(1)>)", "congress": 119}')
+    code, report = run_script(d, out, tmp / "r7.txt")
+    assert code == 0, "a misnamed snapshot must not stop the build"
+    index = json.loads((out / "history" / "index.json").read_text())
+    dates = [e["date"] for e in index]
+    assert "notadate" not in dates and "2020-01-03" not in dates, index
+    assert "notadate.json" in report and "2020-01-03.json" in report, report
+    assert "onerror" in report, "the mismatched date belongs in the report"
 
     # One unreadable snapshot must not brick every future build. index.json is
     # rebuilt from the whole archive on each run, before the workflow commits, so
@@ -379,10 +426,10 @@ def main():
         # weight. Denominator = 0.6667 (roll 1) + 19 unanimous rolls at weight 1.0.
         assert by_icpsr[9]["party_unity_pct"] == 63.33, by_icpsr[9]["party_unity_pct"]
         expected = round(100 * (2 / 3) / (2 / 3 + 19), 2)
-        assert by_icpsr[9]["weighted_partisan_deviation_pct"] == expected == 3.39
+        assert by_icpsr[9]["independence_score"] == expected == 3.39
         # A defection on a zero-cohesion vote costs nothing at all.
         assert by_icpsr[10]["party_unity_pct"] == 66.67
-        assert by_icpsr[10]["weighted_partisan_deviation_pct"] == 0.0
+        assert by_icpsr[10]["independence_score"] == 0.0
         # Consensus dissents are unweighted.
         d4 = json.loads((out_dir / "members" / "4.json").read_text())["dissents"]
         assert [d["kind"] for d in d4] == ["consensus"] and d4[0]["weight"] == 1.0
@@ -428,7 +475,6 @@ def main():
         assert by_icpsr[9]["independence_tier"] == 1
         for i, cons_dev in ((4, 10.0), (5, 20.0)):
             assert by_icpsr[i]["consensus_deviation_pct"] == cons_dev
-            assert by_icpsr[i]["weighted_partisan_deviation_pct"] == 0.0
             assert by_icpsr[i]["independence_score"] == 0.0, by_icpsr[i]
             assert by_icpsr[i]["independence_tier"] == 0
 

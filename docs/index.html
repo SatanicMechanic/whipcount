@@ -10,9 +10,64 @@
 <meta property="og:title" content="Mavericks &amp; Sycophants">
 <meta property="og:description" content="How often each member of Congress votes against their own party — scored, ranked and updated weekly from Voteview rollcall data.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%97%B3%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<!-- Content-Security-Policy, delivered as meta because GitHub Pages cannot set
+     response headers at all. That also rules out HSTS, X-Frame-Options and
+     nosniff here — they are header-only and need a CDN in front to add.
+     frame-ancestors is omitted deliberately: it is ignored in a meta policy.
+     'unsafe-inline' is load-bearing — this is a single-file site with one inline
+     <style>, one inline <script>, and generated style="" attributes throughout.
+     default-src 'self' rather than 'none' so a same-origin resource nobody
+     remembered still loads; the point of the policy is that no third-party
+     origin can execute here, and that holds either way. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <style>
+  /* Fonts are served from this repo, not fonts.gstatic.com. Google's CSS is
+     UA-dependent, so SRI on it is not viable, and a stylesheet from a third party
+     is a third party that can restyle the page. Latin subset only: no member name
+     in the 119th carries a character above U+00FF. If one ever does, that glyph
+     falls back to a system font — re-run the latin-ext faces from Google's CSS.
+     Bebas Neue, DM Mono and DM Sans are all SIL Open Font License 1.1. */
+  @font-face {
+    font-family: 'Bebas Neue';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(fonts/bebas-neue-400-latin.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: 'DM Mono';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(fonts/dm-mono-400-latin.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: 'DM Mono';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url(fonts/dm-mono-500-latin.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: 'DM Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(fonts/dm-sans-400-latin.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: 'DM Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url(fonts/dm-sans-400-latin.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+
   :root {
     --bg:        #0c0c0f;
     --surface:   #13131a;
@@ -141,7 +196,7 @@
     max-width: 1400px; margin: 2.5rem auto; padding: 0 2rem;
   }
   .hist-head { display: flex; align-items: baseline; gap: .75rem; margin-bottom: .9rem; }
-  .hist-title { font-weight: 600; letter-spacing: .02em; }
+  .hist-title { font-weight: 500; letter-spacing: .02em; }   /* 500 is the heaviest face shipped */
   .hist-sub { font-size: .8rem; color: var(--muted); }
   .hist-grid {
     display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: .5rem;
@@ -1203,7 +1258,7 @@ async function renderDetail(icpsr) {
 }
 
 function route() {
-  const m = location.hash.match(/^#\/member\/(\d+)/);
+  const m = location.hash.match(/^#\/member\/(\d+)$/);
   document.getElementById("main-view").style.display   = m ? "none" : "block";
   document.getElementById("detail-view").style.display = m ? "block" : "none";
   if (m) renderDetail(m[1]);
@@ -1230,9 +1285,19 @@ const DAY_MS = 86400000;
 const congressConvened = n => Date.UTC(1789 + 2 * (n - 1), 0, 3);
 
 /** Dates covering `congress` from its start with no long gap, else null. */
+// Snapshot dates are exactly YYYY-MM-DD or the archive is not ours to plot. This
+// is a shape check, not a parse: Date.parse is lenient enough to accept "Jan 1 2026
+// (<img src=x onerror=…>)" — it treats the parens as a comment — and those strings
+// reach innerHTML and attribute values downstream.
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
 function completeCoverage(dates, congress) {
   if (dates.length < TREND_MIN_POINTS) return null;
+  if (!dates.every(d => ISO_DATE.test(d))) return null;
   const t = dates.map(d => Date.parse(d + "T00:00:00Z")).sort((a, b) => a - b);
+  // Every comparison against NaN is false, so one unparseable date walks straight
+  // through both gates below and plots NaN coordinates. Refuse the archive instead.
+  if (t.some(ms => !Number.isFinite(ms))) return null;
   if ((t[0] - congressConvened(congress)) / DAY_MS > TREND_START_DAYS) return null;
   for (let i = 1; i < t.length; i++)
     if ((t[i] - t[i - 1]) / DAY_MS > TREND_MAX_GAP_DAYS) return null;
@@ -1333,8 +1398,8 @@ function trendPanel({ title, d, r }, snaps) {
     <h4>${title}</h4>
     <svg viewBox="0 0 ${W} ${H}" role="img"
          aria-label="${title} average independence score by caucus over time"
-         data-dem='${JSON.stringify(dem)}' data-rep='${JSON.stringify(rep)}'
-         data-geom='${JSON.stringify({ W, H, P, t0, t1, ymax })}'>
+         data-dem="${esc(JSON.stringify(dem))}" data-rep="${esc(JSON.stringify(rep))}"
+         data-geom="${esc(JSON.stringify({ W, H, P, t0, t1, ymax }))}">
       ${ticks}${xLabels}
       <line class="crosshair" y1="${P.t}" y2="${H - P.b}"/>
       ${line(dem, "var(--dem-line)", offD)}${line(rep, "var(--rep-line)", offR)}
@@ -1366,7 +1431,7 @@ function wireTrendHover() {
         return p ? `<div class="tip-row"><span><i style="background:${color}"></i> ${name}</span>
                     <span>${p.v.toFixed(2)}</span></div>` : "";
       };
-      tip.innerHTML = `<div class="tip-date">${near}</div>
+      tip.innerHTML = `<div class="tip-date">${esc(near)}</div>
         ${row(dem, "var(--dem-line)", "Dem")}${row(rep, "var(--rep-line)", "Rep")}`;
       tip.style.left    = Math.min(e.clientX + 14, innerWidth - 150) + "px";
       tip.style.top     = (e.clientY - 12) + "px";

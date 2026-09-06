@@ -11,6 +11,7 @@ a specific one for rebuilding an old term.
 import csv
 import json
 import os
+import re
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -50,13 +51,23 @@ if OFFLINE:
     print(f"! OFFLINE — reusing the CSVs already in {DATA_DIR}, downloading nothing")
 else:
     import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+
+    # Voteview is one university host and a transient 5xx used to skip the whole
+    # weekly publish. 404 stays un-retried: it is the "not published yet" answer
+    # the fallback below depends on.
+    http = requests.Session()
+    http.mount("https://", HTTPAdapter(max_retries=Retry(
+        total=4, backoff_factor=2, status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=frozenset({"GET"}))))
 
     def download(congress):
         """Fetch all six CSVs. False if Voteview has none for this Congress yet."""
         for kind in ("votes", "members", "rollcalls"):
             for ch in ("H", "S"):
                 url = f"{VOTEVIEW_BASE}/{kind}/{ch}{congress}_{kind}.csv"
-                r = requests.get(url, timeout=60)
+                r = http.get(url, timeout=60)
                 if r.status_code == 404:
                     return False
                 r.raise_for_status()
@@ -83,8 +94,7 @@ else:
 # being counted, and the index would just be quietly wrong. Check both, write
 # anything unexpected to the drift report, and let CI open an issue from it.
 REQUIRED_COLUMNS = {
-    "members":   {"icpsr", "chamber", "state_abbrev", "party_code",
-                  "district_code", "bioname"},
+    "members":   {"icpsr", "chamber", "state_abbrev", "party_code", "bioname"},
     "votes":     {"icpsr", "chamber", "rollnumber", "cast_code"},
     "rollcalls": {"chamber", "rollnumber", "date", "bill_number",
                   "vote_question", "vote_desc", "vote_result"},
@@ -94,8 +104,7 @@ KNOWN_CAST_CODES = set(range(10))   # 0 not a member · 1-6 Yea/Nay · 7-8 Prese
 KNOWN_PARTY_CODES = {"100", "200", "328"}
 SCHEMA_REPORT = Path(os.environ.get("VOTES_SCHEMA_REPORT", "schema-drift.txt"))
 MAX_DRIFT_LINES = 25   # backstop: an issue body has a size limit, and so does a reader
-drift = []
-drift_keys = set()
+drift = {}   # key -> first message seen; insertion-ordered
 
 
 def note_drift(key, msg):
@@ -103,18 +112,34 @@ def note_drift(key, msg):
 
     Keyed rather than deduped by message text: the messages carry an example
     rollcall or member, so a whole cast_code family changing would otherwise
-    emit a line per row — hundreds of thousands of them, each costing a linear
-    scan of the list, and an issue body far past GitHub's limit.
+    emit a line per row — hundreds of thousands of them, and an issue body far
+    past GitHub's limit.
     """
-    if key not in drift_keys:
-        drift_keys.add(key)
-        drift.append(msg)
+    drift.setdefault(key, msg)
 
 
 def fail_schema(msg):
     """Unrecoverable drift: record it for CI, then stop."""
     SCHEMA_REPORT.write_text(msg + "\n")
     raise SystemExit(f"! {msg}")
+
+
+def as_int(raw, field, context):
+    """int(raw), or None plus one drift line — never an exception.
+
+    A traceback here is the worst outcome available: it writes no schema-drift.txt,
+    so the workflow's report step finds nothing, files no issue, and skips the
+    publish. The site then serves the last good build indefinitely with no signal.
+    Keyed by field, not by value: a column that changes format changes it on every
+    row, and one line per row would be hundreds of thousands of them.
+    """
+    try:
+        return int(raw)
+    except (ValueError, TypeError):
+        note_drift(("non-numeric", field),
+                   f"{field}: expected a number, got {raw!r} (e.g. {context}) "
+                   f"— those rows are skipped")
+        return None
 
 
 def read_csv(name, kind):
@@ -193,7 +218,9 @@ for ch in ("H", "S"):
         if m["state_abbrev"] in DELEGATE_STATES:
             delegates.append(m["bioname"])
             continue
-        icpsr = int(m["icpsr"])
+        icpsr = as_int(m["icpsr"], "members.icpsr", m["bioname"])
+        if icpsr is None:
+            continue
         m["caucus"] = "D" if icpsr in DEM_CAUCUSING_INDEPENDENTS else CAUCUS.get(m["party_code"], "O")
         m["display_party"] = DISPLAY_PARTY.get(m["party_code"], "O")
         members_all[icpsr] = m
@@ -219,9 +246,22 @@ cast_count = Counter()         # (icpsr, chamber) -> decisive votes actually cas
 
 for ch in ("H", "S"):
     for v in read_csv(f"{ch}{CONGRESS}_votes.csv", "votes"):
-        chamber, roll = v["chamber"], int(v["rollnumber"])
+        chamber, roll = v["chamber"], as_int(v["rollnumber"], "votes.rollnumber",
+                                             f"{v['chamber']} {v['rollnumber']!r}")
+        if roll is None:
+            continue
+        if chamber not in KNOWN_CHAMBERS:
+            # Not fatal and not skippable: dropping the rows would empty the index.
+            # The damage is the join against rollcalls.csv, which is keyed by that
+            # file's chamber value — dissents come out with no date, bill number,
+            # question or result, and nothing else goes visibly wrong.
+            note_drift(("votes chamber", chamber),
+                       f"votes: unrecognised chamber {chamber!r} "
+                       f"(e.g. rollcall {roll}) — dissents lose their bill context")
         rolls_seen[chamber].add(roll)
-        raw = int(v["cast_code"])
+        raw = as_int(v["cast_code"], "votes.cast_code", f"{chamber} rollcall {roll}")
+        if raw is None:
+            continue
         if raw not in KNOWN_CAST_CODES:
             # normalize() passes an unknown code straight through, where it lands
             # in the "missed" bucket. Silent miscounting is the failure to catch.
@@ -231,7 +271,9 @@ for ch in ("H", "S"):
         code = normalize(raw)
         if code == 0:
             continue
-        icpsr = int(v["icpsr"])
+        icpsr = as_int(v["icpsr"], "votes.icpsr", f"{chamber} rollcall {roll}")
+        if icpsr is None:
+            continue
         key = (icpsr, chamber)
         if key in span:
             s = span[key]
@@ -263,7 +305,11 @@ for (icpsr, chamber), (first, last) in span.items():
 rollcalls = {}
 for ch in ("H", "S"):
     for r in read_csv(f"{ch}{CONGRESS}_rollcalls.csv", "rollcalls"):
-        rollcalls[(r["chamber"], int(r["rollnumber"]))] = {
+        roll = as_int(r["rollnumber"], "rollcalls.rollnumber",
+                      f"{r['chamber']} {r['rollnumber']!r}")
+        if roll is None:
+            continue
+        rollcalls[(r["chamber"], roll)] = {
             "date": r["date"],
             "bill_number": r["bill_number"],
             "vote_question": r["vote_question"],
@@ -400,13 +446,16 @@ for icpsr, cast in by_member.items():
                 "kind": "partisan" if partisan else "consensus",
                 "member_vote": "Yea" if code == 1 else "Nay",
                 "party_position": "Yea" if pos == 1 else "Nay",
+                # Not rendered, deliberately kept: it is the per-vote audit trail for
+                # the one number the whole method turns on, and the self-check reads it
+                # to prove the formula. The 310KB it costs is spread across 543 files
+                # fetched one at a time — 585 bytes per visitor, which buys a lot here.
                 "weight": round(weight, 4),
             })
 
     party_unity = 1 - n_defect / n_part if n_part else None
     p_dev = w_defect / w_total if w_total else None
-    cons_loy = 1 - n_cons_defect / n_cons if n_cons else None
-    c_dev = (1 - cons_loy) if cons_loy is not None else None
+    c_dev = n_cons_defect / n_cons if n_cons else None
 
     # The headline score is cohesion-weighted partisan deviation alone. It used to be
     # the mean of that and consensus deviation, but the two are not the same behavior
@@ -430,15 +479,14 @@ for icpsr, cast in by_member.items():
         "state":               m["state_abbrev"],
         "chamber":             m["chamber"],
         "leadership":          LEADERSHIP.get(icpsr),
-        "district":            int(m["district_code"]) if m["chamber"] == "House" else None,
         "independence_score":  pct(ind),
         # Both: the tier drives every lookup, the name keeps the JSON readable.
         "independence_tier":   independence_tier(ind * 100) if ind is not None else None,
         "independence_label":  independence_label(ind * 100) if ind is not None else None,
+        # party_unity_pct is the one derived rate that stays: the page documents it
+        # by name as the unweighted alternative to the score.
         "party_unity_pct":     pct(party_unity),
-        "weighted_partisan_deviation_pct": pct(p_dev),
         "partisan_votes":      n_part,
-        "consensus_loyalty_pct":   pct(cons_loy),
         "consensus_deviation_pct": pct(c_dev),
         "consensus_votes":     n_cons,
         "eligible_votes":      eligible[icpsr],
@@ -525,12 +573,24 @@ today = now.strftime("%Y-%m-%d")
 # Skip anything unreadable rather than letting one bad file kill every future
 # build: this runs before the workflow commits, so an unguarded raise here would
 # fail identically every week until someone hand-edited the archive.
+# The date is also the only snapshot field the site renders as text, so it is
+# checked, not trusted: docs/history/ is committed to main, which makes a merged
+# pull request a write path into the published page. A name that is not exactly
+# YYYY-MM-DD, or a file whose own "date" disagrees with its name, is left out.
+SNAPSHOT_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
 history_index = []
 for p in sorted(hist_dir.glob("*.json")):
     if p.name == "index.json":
         continue
     try:
         entry = json.loads(p.read_text())
+        if not SNAPSHOT_DATE.match(p.stem) or entry.get("date") != p.stem:
+            print(f"! Skipping misnamed snapshot {p.name}")
+            note_drift(("snapshot", p.name),
+                       f"history/{p.name} is not a YYYY-MM-DD snapshot of its own date "
+                       f"(carries {entry.get('date')!r}) — left out of index.json")
+            continue
         history_index.append({"date": p.stem, "congress": entry["congress"]})
     except (json.JSONDecodeError, KeyError, OSError) as e:
         print(f"! Skipping unreadable snapshot {p.name}: {type(e).__name__}")
@@ -540,7 +600,7 @@ for p in sorted(hist_dir.glob("*.json")):
 
 # A party code we don't map (Voteview's 328 for anyone who isn't Sanders or King)
 # drops that member from the index entirely. Name them rather than quietly shrink.
-unscored = sorted((int(m["icpsr"]), m["bioname"]) for m in members_all.values()
+unscored = sorted((i, m["bioname"]) for i, m in members_all.items()
                   if m["caucus"] not in ("D", "R"))
 if unscored:
     print(f"! Unscored — no mapped caucus: {', '.join(n for _, n in unscored)}")
@@ -566,13 +626,14 @@ if CONGRESS not in LEADERSHIP_BY_CONGRESS:
 # The build still publishes on drift — the numbers are usually fine and stale is
 # worse than slightly-off. CI turns a non-empty report into a GitHub issue.
 if drift:
-    shown, rest = drift[:MAX_DRIFT_LINES], len(drift) - MAX_DRIFT_LINES
+    msgs = list(drift.values())
+    shown, rest = msgs[:MAX_DRIFT_LINES], len(msgs) - MAX_DRIFT_LINES
     lines = [f"- {d}" for d in shown]
     if rest > 0:
         lines.append(f"- ...and {rest} more kinds of drift (see the run log)")
     SCHEMA_REPORT.write_text("\n".join(lines) + "\n")
-    print(f"! Upstream schema drift ({len(drift)}) — wrote {SCHEMA_REPORT}")
-    for d in drift:
+    print(f"! Upstream schema drift ({len(msgs)}) — wrote {SCHEMA_REPORT}")
+    for d in msgs:
         print(f"    {d}")
 elif SCHEMA_REPORT.exists():
     SCHEMA_REPORT.unlink()   # clean run — don't let a stale report reopen an issue

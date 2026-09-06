@@ -45,8 +45,13 @@ jobs:
         run: |
           [ -s schema-drift.txt ] || exit 0
           title="Voteview schema drift"
+          # The report quotes upstream values (bionames, chamber and party codes).
+          # A backtick in one would close the fence early and let the rest render as
+          # markdown, posted as this project. Strip them; nothing else is markdown
+          # inside a fence, and mentions in a code block do not notify.
+          drift=$(tr -d '`' < schema-drift.txt)
           body=$(printf 'The weekly build saw upstream data it did not expect.\n\n```\n%s\n```\n\n[Run log](%s/%s/actions/runs/%s)' \
-                 "$(cat schema-drift.txt)" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")
+                 "$drift" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")
           existing=$(gh issue list --state open --search "$title in:title" --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body "$body"

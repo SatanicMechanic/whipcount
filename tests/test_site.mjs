@@ -52,7 +52,9 @@ globalThis.fetch = async url => {
 };
 
 const html = fs.readFileSync(path.join(ROOT, "docs", "index.html"), "utf8");
-const src = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]).join("\n")
+// Anchored to line starts: the page's prose mentions <script> and <style> inside
+// an HTML comment, and a loose match swallows the stylesheet along with it.
+const src = [...html.matchAll(/^<script>$([\s\S]*?)^<\/script>$/gm)].map(m => m[1]).join("\n")
               .replace(/init\(\)\.catch\([\s\S]*$/, "");   // don't boot the page
 const page = await import("data:text/javascript;base64," + Buffer.from(
   src + "\nexport {renderSummaryCards, renderTable, renderTrend, trendPanel, seriesPoints, updateSortHeaders};" +
@@ -184,6 +186,19 @@ check("aria-sort not stamped on unrelated tables",
   detailTh.attrs["aria-sort"] === undefined, JSON.stringify(detailTh.attrs));
 document.querySelectorAll = () => [];
 
+// ── 1e. No third-party origins ───────────────────────────────────────────────
+// The CSP is meta-only (GitHub Pages sets no headers), so it is the whole defence
+// and it says 'self'. A resource pointing anywhere else is dead on arrival — the
+// page would silently lose its fonts rather than fall back to them.
+console.log("\nThird-party resources");
+const external = [...html.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)]
+  .map(m => m[1])
+  .filter(u => !/^https:\/\/(grokipedia\.com|voteview\.com)/.test(u));   // <a> links, not resources
+check("no third-party resources loaded", external.length === 0, external.join(" "));
+check("CSP declared", /http-equiv="Content-Security-Policy"/.test(html));
+check("fonts are served from this repo",
+  (html.match(/src: url\(fonts\/[^)]+\.woff2\)/g) || []).length >= 4);
+
 // ── 2. Trend chart ───────────────────────────────────────────────────────────
 // The gate is coverage of the term, not a Congress number — so it must switch
 // itself on for any Congress archived from the start, and stay off for one we
@@ -256,6 +271,30 @@ loadArchive(120, weekly(convened(120) + 8 * DAY, 2));
 await page.renderTrend(120);
 check("hidden with only two points", !shown());
 
+// A snapshot whose own date field is unparseable makes every comparison in the
+// coverage gate NaN — which is false, so it used to walk through both gates and
+// plot NaN coordinates. The gate has to fail closed on an archive it can't read.
+reset();
+const good120 = weekly(convened(120) + 8 * DAY, 6);
+loadArchive(120, good120);
+archive[`history/${good120[2]}.json`].date = "not-a-date";
+await page.renderTrend(120);
+check("hidden when a snapshot's date is unparseable", !shown());
+check("no NaN plotted from a bad date",
+  !/NaN/.test(els["trend-grid"]?.innerHTML ?? ""));   // untouched when the gate holds
+
+// docs/history/ is committed to main, so a merged pull request is a write path
+// into the page. Date.parse is not a filter — V8 skips parenthesised comments, so
+// this payload parses fine — which is why the gate checks the shape instead.
+reset();
+const XSS = "Jan 1 2026 (<img src=x onerror=alert(1)>)";
+loadArchive(120, good120);
+archive[`history/${good120[2]}.json`].date = XSS;
+await page.renderTrend(120);
+check("a date that parses but isn't YYYY-MM-DD is refused", !shown());
+check("payload never reaches the page",
+  !(els["trend-grid"]?.innerHTML ?? "").includes("onerror"));
+
 // ── 3. Label collision ───────────────────────────────────────────────────────
 console.log("\nConverged caucuses (averages 0.04 apart)");
 const conv = [0, 1, 2, 3].map(i => snapshot(`2027-0${i + 2}-01`, 120,
@@ -265,7 +304,12 @@ const ys = [...panel.matchAll(/class="end-lbl" x="[\d.]+" y="([\d.]+)"/g)].map(m
 check("end labels stay >= 10px apart", Math.abs(ys[0] - ys[1]) >= 10,
   `gap ${Math.abs(ys[0] - ys[1]).toFixed(1)}px`);
 
-const { W, P } = JSON.parse(panel.match(/data-geom='([^']+)'/)[1]);
+// data-* are HTML-escaped now (a snapshot date is untrusted text); the browser
+// decodes them on dataset access, so the test has to decode them too.
+const unesc = t => t.replace(/&quot;/g, '"').replace(/&lt;/g, "<")
+                    .replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+check("chart data attributes are escaped", /data-geom="[^']*"/.test(panel));
+const { W, P } = JSON.parse(unesc(panel.match(/data-geom="([^"]+)"/)[1]));
 const dots = [...panel.matchAll(/cx="([\d.]+)" cy="([\d.]+)"/g)].map(m => [+m[1], +m[2]]);
 check("marks stay inside the plot box", dots.every(([x]) => x >= P.l - .5 && x <= W - P.r + .5));
 

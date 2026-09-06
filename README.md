@@ -29,7 +29,7 @@ The bands live in exactly one place — `TIERS` in `analyze_votes.py` — and sh
 
 Yea and Nay each cover a range of Voteview cast codes (1–3 and 4–6); all of them are counted. Only decisive Yea/Nay votes go into the score denominators. Scores are cumulative over the whole term rather than a rolling window, which is why they barely move week to week. Members with fewer than `MIN_VOTES` (30) recorded votes are left unscored — too small a denominator to mean anything.
 
-The table shows nine columns; `party_unity_pct`, `consensus_loyalty_pct` and the rest stay in `data.json` and on each member's page rather than widening it further.
+The table shows nine columns; `party_unity_pct` and the per-vote detail stay in `data.json` and on each member's page rather than widening it further. Fields nothing reads are not published: `consensus_loyalty_pct` was `100 - consensus_deviation_pct`, `weighted_partisan_deviation_pct` became a duplicate of the score when the score stopped being a blend, and `district` was never rendered.
 
 **Floor leaders are flagged, not excluded.** The Speaker plus each party's leader and whip in each chamber carry a `leadership` field; the table badges them and the filter can hide or isolate them. They schedule the votes they then vote on, so their loyalty is partly loyalty to an agenda they set themselves — in the 119th the Speaker came out the single most loyal member of his caucus, on the subset of votes he chose to cast. Excluding them outright would drop the first names anyone looks up, so the call is left to the reader.
 
