@@ -24,7 +24,7 @@ Each member receives an **Independence Score** — the average of:
 
 **Attendance** is tracked separately and does *not* feed into the score. Over every rollcall their chamber held between their first and last recorded vote, `missed %` counts the ones with no Yea or Nay from them — Present, Not Voting, and the ones Voteview has no row for at all. That last case matters: the Speaker votes at his own discretion and is simply absent from a large share of House rollcalls, which a row count would score as perfect attendance. Bounding by first and last vote keeps members who arrived or left mid-congress from being charged for votes held outside their service. Showing up is not the same thing as being independent, so the two numbers stay apart.
 
-Yea and Nay each cover a range of Voteview cast codes (1–3 and 4–6); all of them are counted. Only decisive Yea/Nay votes go into the score denominators.
+Yea and Nay each cover a range of Voteview cast codes (1–3 and 4–6); all of them are counted. Only decisive Yea/Nay votes go into the score denominators. Scores are cumulative over the whole term rather than a rolling window, which is why they barely move week to week. Members with fewer than `MIN_VOTES` (30) recorded votes are left unscored — too small a denominator to mean anything.
 
 **Floor leaders are flagged, not excluded.** The Speaker plus each party's leader and whip in each chamber carry a `leadership` field; the table badges them and the filter can hide or isolate them. They schedule the votes they then vote on, so their loyalty is partly loyalty to an agenda they set themselves — in the 119th the Speaker came out the single most loyal member of his caucus, on the subset of votes he chose to cast. Excluding them outright would drop the first names anyone looks up, so the call is left to the reader.
 
@@ -73,7 +73,7 @@ git push -u origin main
 - Go to **Actions → Update Voting Index**
 - Click **Run workflow**
 
-After ~30 seconds, `docs/data.json` will be committed and the site will be live.
+After ~30 seconds the built `docs/` tree is force-pushed to the `site` branch and the site is live. The bulk outputs (`data.json`, `members/`) are gitignored on `main` and only ever exist on `site`; the only thing committed back to `main` is `docs/history/`, which cannot be regenerated.
 
 The Action runs automatically every Monday at 8am UTC thereafter.
 

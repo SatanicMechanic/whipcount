@@ -688,51 +688,60 @@
   <div class="intro">
     <div class="intro-block">
       <h2>Welcome</h2>
-      <p>Most congressional scorecards measure how often a member votes with their party
-      when the two parties disagree. That's useful, but it misses half the picture. When
-      both party leaderships agree, those votes are typically invisible to standard
-      analyses. The consensus deviation score captures how often a member breaks from
-      bipartisan agreement — the moments when the Borg collectively wants a Yea, and
-      someone votes No anyway. That dissent is factored into the overall Independence
-      score.</p>
       <p>This site tracks how often members of Congress vote as part of the two-headed
       <a href="https://grokipedia.com/page/Borg" target="_blank" rel="noopener">Borg</a>.
       Deviation is applauded in this framing, serving as an indicator of those voting
       their conscience rather than buckling to the
-      <a href="https://grokipedia.com/page/Whip_(politics)" target="_blank" rel="noopener">whip</a>.</p>
-      <p>Unlike other scorecards that use ostensibly positive labels such as
-      "Party Loyalty" or "Ideological Alignment", we lean hard the other way and give a
-      shout out to those who buck the trend.</p>
-      <p>If you're the type of person who thinks their party can do no wrong and always
-      votes a straight ticket for the GOP or DNC, you might still find it useful as a
-      straight loyalty tracker.</p>
+      <a href="https://grokipedia.com/page/Whip_(politics)" target="_blank" rel="noopener">whip</a>.
+      Other scorecards use ostensibly positive labels such as "Party Loyalty" or
+      "Ideological Alignment"; we lean hard the other way and give a shout out to those
+      who buck the trend. Read the scale upside down and it works as a straight loyalty
+      tracker.</p>
+      <p>Most scorecards measure how often a member votes with their party when the two
+      parties disagree. That's useful, but it misses half the picture. When both party
+      leaderships agree, those votes are typically invisible to standard analyses. The
+      consensus deviation score captures how often a member breaks from bipartisan
+      agreement — the moments when the Borg collectively wants a Yea, and someone votes
+      No anyway. That dissent is factored into the overall Independence score.</p>
+      <p>Breaking ranks is also not worth the same on every vote. Defecting when your
+      party votes as a bloc is real independence; landing on the losing side of a 50/50
+      party split is not, so partisan deviation is weighted by how united the party was
+      on each vote.</p>
     </div>
     <div class="intro-block">
       <h2>Methodology</h2>
       <ul class="method-list">
         <li>
           <span class="term">What's counted</span>
-          <span>Recorded Yea and Nay votes cast by each member during the current Congress. Only votes where the member was present and voted decisively are included.</span>
-        </li>
-        <li>
-          <span class="term">What's omitted</span>
-          <span>Abstentions, missed votes, paired votes, and procedural announced positions. Members with fewer than 30 recorded votes in the current Congress are omitted entirely — too few votes to produce a meaningful score.</span>
+          <span>Recorded Yea and Nay votes cast during the Congress shown. Scores are cumulative across the whole term, not a rolling window — which is why they barely move week to week.</span>
         </li>
         <li>
           <span class="term">Partisan deviation</span>
-          <span>On votes where the two parties split, how often did the member vote against their own party's majority?</span>
+          <span>On votes where the two parties split, how often the member voted against their own party's majority — each vote weighted by the party's cohesion on it, from 1.0 for a unanimous party down to 0.0 for an even split. The unweighted rate is still published in the data as <code>party_unity_pct</code>.</span>
         </li>
         <li>
           <span class="term">Consensus deviation</span>
-          <span>On votes where both party majorities agreed, how often did the member break from that bipartisan consensus?</span>
+          <span>On votes where both party majorities agreed, how often the member broke from that bipartisan consensus. Not weighted.</span>
         </li>
         <li>
           <span class="term">Independence score</span>
           <span>The average of partisan deviation and consensus deviation, expressed as a percentage. Higher = more independent from leadership.</span>
         </li>
         <li>
+          <span class="term">Attendance</span>
+          <span>Tracked separately and deliberately kept out of the score — showing up is not the same thing as being independent. Over every rollcall their chamber held between their first and last recorded vote, <em>missed %</em> counts the ones with no Yea or Nay from them: Present, Not Voting, and rollcalls with no row for them at all.</span>
+        </li>
+        <li>
+          <span class="term">Party leaders</span>
+          <span>The Speaker plus each party's leader and whip in each chamber are badged, not excluded. They schedule the votes they then vote on, so their loyalty is partly loyalty to an agenda they set themselves. Use the filter to hide or isolate them.</span>
+        </li>
+        <li>
+          <span class="term">Who's left out</span>
+          <span>Members with fewer than 30 recorded votes — too few to produce a meaningful score. Also the President, whose announced positions Voteview records as cast votes, and the six non-voting delegates, who are barred from final-passage votes and so can't be ranked against members who aren't.</span>
+        </li>
+        <li>
           <span class="term">Independents</span>
-          <span>Members displayed as Independent are scored against the caucus they align with in Congress.</span>
+          <span>Members displayed as Independent are scored against the caucus they align with. Any independent with no caucus to deviate from is left out.</span>
         </li>
       </ul>
     </div>
