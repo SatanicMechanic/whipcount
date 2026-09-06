@@ -19,8 +19,14 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const GROUPS = ["all", "house", "senate", "house_dem", "house_rep", "senate_dem", "senate_rep"];
 const SERIES = ["house_dem", "house_rep", "senate_dem", "senate_rep"];
-const LABELS = ["Mindless Drone", "Yes Man", "Reluctant Rebel",
-                "Frequent Dissenter", "Rebellious Streak", "Lone Wolf"];
+
+// The score bands are defined once, in analyze_votes.py, and shipped in data.json.
+// Read them from there rather than restating them: that is the whole point of the
+// tier table, and it means a rename in the Python is exercised here for free.
+const TIERS = [...fs.readFileSync(path.join(ROOT, "analyze_votes.py"), "utf8")
+  .matchAll(/\{"id": (\d+),\s+"max": ([\d.]+|None),\s+"name": "([^"]+)"\}/g)]
+  .map(m => ({ id: +m[1], max: m[2] === "None" ? null : +m[2], name: m[3] }));
+if (TIERS.length !== 6) throw new Error(`parsed ${TIERS.length} tiers from analyze_votes.py, want 6`);
 
 let failures = 0;
 const check = (name, ok, detail = "") => {
@@ -31,8 +37,9 @@ const check = (name, ok, detail = "") => {
 // ── Stub DOM ─────────────────────────────────────────────────────────────────
 const els = {};
 const el = id => (els[id] ??= {
-  id, innerHTML: "", textContent: "", value: "", style: {}, dataset: {},
+  id, innerHTML: "", textContent: "", value: "", style: {}, dataset: {}, attrs: {},
   querySelector: () => null, querySelectorAll: () => [], addEventListener: () => {},
+  setAttribute(k, v) { this.attrs[k] = v; },
 });
 globalThis.document = { getElementById: el, querySelectorAll: () => [], addEventListener: () => {} };
 globalThis.window = { addEventListener: () => {} };
@@ -48,12 +55,18 @@ const html = fs.readFileSync(path.join(ROOT, "docs", "index.html"), "utf8");
 const src = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]).join("\n")
               .replace(/init\(\)\.catch\([\s\S]*$/, "");   // don't boot the page
 const page = await import("data:text/javascript;base64," + Buffer.from(
-  src + "\nexport {renderSummaryCards, renderTable, renderTrend, trendPanel, seriesPoints};" +
-        "\nexport function setMembers(m){ allMembers = m; }").toString("base64"));
+  src + "\nexport {renderSummaryCards, renderTable, renderTrend, trendPanel, seriesPoints, updateSortHeaders};" +
+        "\nexport function setMembers(m){ allMembers = m; }" +
+        "\nexport function setSort(c,d){ sortCol = c; sortDir = d; }" +
+        "\nexport function setTiers(t){ TIERS = t; }" +
+        "\nexport {tierOptions};" +
+        "\nexport {filteredMembers};").toString("base64"));
+
+page.setTiers(TIERS);
 
 const group = avg => ({
   count: 100, avg_independence: avg, min_independence: 0, max_independence: avg * 3,
-  avg_missed_pct: 3.1, label_dist: Object.fromEntries(LABELS.map(l => [l, 16])),
+  avg_missed_pct: 3.1, label_dist: TIERS.map(() => 16),   // indexed by tier id, not keyed by name
 });
 const snapshot = (date, congress, avgs) => ({
   date, congress,
@@ -78,6 +91,98 @@ try {
 } catch (e) {
   check("renderTable survives zero members", false, e.message);
 }
+check("distribution survives zero members", els["hist-sub"].textContent === "no scored members");
+check("no NaN/undefined in empty distribution", !/NaN|undefined/.test(els["hist-grid"].innerHTML));
+
+// ── 1b. The distribution histogram ───────────────────────────────────────────
+// The pile-up is the finding, so the chart has to survive one bin holding nearly
+// everyone: bars scale to the largest bin, not the total.
+console.log("\nDistribution histogram");
+const member = (score, tier) => ({
+  icpsr: Math.random(), name: "X", party: "D", state: "NY", chamber: "House",
+  independence_score: score, independence_tier: tier, missed_pct: 0,
+  party_unity_pct: 100, consensus_deviation_pct: 0, partisan_votes: 100,
+  consensus_votes: 10, leadership: null,
+});
+const skewed = [
+  ...Array.from({ length: 90 }, () => member(0.4, 0)),
+  ...Array.from({ length: 9 },  () => member(3.0, 1)),
+  member(33.0, 5),
+];
+page.setMembers(skewed);
+page.renderTable();
+const distGrid = els["hist-grid"].innerHTML;
+check("all six bins rendered", (distGrid.match(/hist-bar/g) || []).length === 6);
+check("largest bin is full height", /height:100%/.test(distGrid));
+check("counts and shares shown", distGrid.includes("90 · 90%") && distGrid.includes("1 · 1%"));
+check("empty bins render at zero, not NaN", distGrid.includes("height:0%") && !/NaN|undefined/.test(distGrid));
+check("subtitle counts scored members", els["hist-sub"].textContent.startsWith("100 scored members"));
+check("empty bins draw nothing at all", /height:0%;min-height:0px/.test(distGrid));
+check("axis carries chip, range and every tier name",
+  TIERS.every(t => els["hist-x"].innerHTML.includes(t.name)) &&
+  els["hist-x"].innerHTML.includes("&lt;1%") &&   // escaped: a bare "<1%" is a tag start
+  els["hist-x"].innerHTML.includes("30%+"),
+  els["hist-x"].innerHTML.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
+check("bars have a text alternative", /Mindless Drone 90/.test(els["hist-grid"].attrs["aria-label"]));
+check("filter options are generated from the same table",
+  page.tierOptions() === TIERS.map(t => `<option value="${t.id}">${t.name}</option>`).join(""),
+  page.tierOptions());
+
+// Picking one bin from the label filter must not collapse the chart to that bin —
+// the histogram is the context for the filtered table, so it ignores that one filter.
+els["filter-label"].value = "1";   // tier id, not the display name
+page.renderTable();
+check("label filter narrows the table", els["tbody"].innerHTML.match(/<tr/g).length === 9);
+check("label filter leaves the distribution whole",
+  els["hist-sub"].textContent.startsWith("100 scored members") &&
+  els["hist-grid"].innerHTML.includes("90 · 90%"));
+els["filter-label"].value = "";
+
+// ── 1c. Consensus deviation is never ranked across chambers ─────────────────
+// The Senate's consensus bucket is a ~65-vote procedural residue against the
+// House's ~191 suspension bills, so a combined leaderboard on that column would
+// compare two different things. Sorting it groups by chamber instead.
+console.log("\nConsensus deviation sort");
+const mixed = [
+  { ...member(1, 1), name: "SenHigh", chamber: "Senate", consensus_deviation_pct: 60, consensus_votes: 65 },
+  { ...member(1, 1), name: "HouseHigh", chamber: "House", consensus_deviation_pct: 40, consensus_votes: 191 },
+  { ...member(1, 1), name: "HouseLow", chamber: "House", consensus_deviation_pct: 5, consensus_votes: 191 },
+  { ...member(1, 1), name: "SenLow", chamber: "Senate", consensus_deviation_pct: 2, consensus_votes: 65 },
+];
+page.setMembers(mixed);
+page.setSort("consensus_deviation_pct", -1);
+const order = page.filteredMembers().map(m => m.name);
+check("chambers grouped, not interleaved", order.join() === "HouseHigh,HouseLow,SenHigh,SenLow", order.join());
+check("still ranked within each chamber",
+  order.indexOf("HouseHigh") < order.indexOf("HouseLow") &&
+  order.indexOf("SenHigh") < order.indexOf("SenLow"));
+page.renderTable();
+check("denominator shown beside the rate", els["tbody"].innerHTML.includes("of 65"));
+page.setSort("independence_score", -1);
+
+// ── 1d. Sort headers ─────────────────────────────────────────────────────────
+// A member page leaves its own <thead><th> in the DOM after you navigate back —
+// they have no .sort-arrow, so anything selecting "thead th" globally throws on
+// the next header click and the table silently stops sorting.
+console.log("\nSort headers");
+const th = (col) => ({
+  dataset: col ? { col } : {},
+  classList: { toggle(){} },
+  attrs: {}, setAttribute(k, v) { this.attrs[k] = v; },
+  querySelector: sel => col && sel === ".sort-arrow" ? { textContent: "" } : null,
+});
+const mainThs = [th("name"), th("independence_score")];
+const detailTh = th(null);                       // a member page's Date column
+document.querySelectorAll = sel =>
+  sel.includes("#main-table") ? mainThs : [...mainThs, detailTh];
+let threw = null;
+try { page.updateSortHeaders(); } catch (e) { threw = e.message; }
+check("survives a member page's headers still in the DOM", threw === null, threw || "");
+check("aria-sort stamped on the sorted column",
+  mainThs[1].attrs["aria-sort"] === "descending", JSON.stringify(mainThs[1].attrs));
+check("aria-sort not stamped on unrelated tables",
+  detailTh.attrs["aria-sort"] === undefined, JSON.stringify(detailTh.attrs));
+document.querySelectorAll = () => [];
 
 // ── 2. Trend chart ───────────────────────────────────────────────────────────
 // The gate is coverage of the term, not a Congress number — so it must switch
@@ -105,7 +210,7 @@ function loadArchive(congress, dates, blank = 0, extra = []) {
 
 const reset = () => { els["trend"] = undefined; els["trend-grid"] = undefined;
                       els["trend-sub"] = undefined; };
-const shown = () => els["trend"]?.style.display === "block";
+const shown = () => els["trend"]?.dataset.state === "ready";
 
 console.log("\nTrend chart · archived from the start of the term");
 const dates120 = weekly(convened(120) + 8 * DAY, 10);   // first run 8 days in

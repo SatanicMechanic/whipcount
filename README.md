@@ -8,23 +8,28 @@ Nothing here is pinned to one Congress. Which one is in scope is derived from th
 
 ## How scores work
 
-Each member receives an **Independence Score** — the average of:
+Each member receives an **Independence Score**: how often they voted against their party majority on contested partisan votes, *weighted by how united the party was*. Breaking ranks on a vote where your party was unanimous is real independence; being on the losing side of a 50/50 party split is not. Each vote's weight is `(party's share on the majority position - 0.5) x 2` — 1.0 when the party votes as a bloc, 0.0 when it's evenly divided. The plain unweighted number is still published as `party_unity_pct` if you prefer it.
 
-1. **Partisan deviation** — how often they voted against their party majority on contested partisan votes, *weighted by how united the party was*. Breaking ranks on a vote where your party was unanimous is real independence; being on the losing side of a 50/50 party split is not. Each vote's weight is `(party's share on the majority position - 0.5) x 2` — 1.0 when the party votes as a bloc, 0.0 when it's evenly divided. The plain unweighted number is still published as `party_unity_pct` if you prefer it.
-2. **Consensus deviation** — how often they voted against bipartisan consensus (both parties agreed but they didn't). Not weighted.
+**Consensus deviation** — how often they voted against bipartisan consensus (both parties agreed but they didn't) — is published beside the score, not inside it. It used to be averaged in, one half each. That was wrong: the two run on different scales, with a median of 3.5% against the weighted partisan median of 0.6%, so the mean tracked consensus deviation at r=0.96 and party discipline barely moved the ranking at all. Blending them made the average member look three times more independent than their voting record supports. They are different behaviors and they get separate columns.
 
-| Score | Label |
-|-------|-------|
-| < 1%  | Mindless Drone |
-| 1–5%  | Yes Man |
-| 5–10% | Reluctant Rebel |
-| 10–20%| Frequent Dissenter |
-| 20–30%| Rebellious Streak |
-| 30%+  | Lone Wolf |
+The consensus column carries its denominator (`62% of 67`) because the chambers do not supply comparable ones. Most of the House's bipartisan rollcalls are suspension-of-the-rules bills — the classic noncontroversial passage vote — and it holds roughly three times as many as the Senate, whose bucket is mostly cloture motions and motions to proceed that happened to align. One Senate defection therefore moves the rate about three times as far, and senators post consensus deviation over 50%. (As of the 119th's 2026-09-06 build: House 191, of which 130 suspension bills; Senate 67. Those counts grow every week — the ratio is the durable part.) Filtering the bucket down to substantive passage votes was measured and rejected: it barely moves the House (191 -> ~148) and cuts the Senate to ~21, making the thin denominator thinner, and it would mean matching `vote_question` strings that Voteview can rename at any time. Instead the number is published with its denominator attached, and sorting that column groups the chambers rather than ranking them against each other.
+
+| Tier | Score | Label |
+|------|-------|-------|
+| 0 | < 1%  | Mindless Drone |
+| 1 | 1–5%  | Bobblehead |
+| 2 | 5–10% | Squeaky Wheel |
+| 3 | 10–20%| Loose Cannon |
+| 4 | 20–30%| Heretic |
+| 5 | 30%+  | Lone Wolf |
+
+The bands live in exactly one place — `TIERS` in `analyze_votes.py` — and ship in `data.json` as `tiers`. The site builds its scale legend, filter options, histogram axis, ranges and every badge colour from that table, so renaming a band is a one-line edit and the browser test reads the names back out of the Python to prove it. Members carry both `independence_tier` (the id, what everything keys on) and `independence_label` (the name, so the JSON reads on its own). Snapshot distributions are archived as `label_dist`, a list indexed by tier id rather than a dict keyed by name: the archive is the one thing that cannot be regenerated, and it has to survive a rename.
 
 **Attendance** is tracked separately and does *not* feed into the score. Over every rollcall their chamber held between their first and last recorded vote, `missed %` counts the ones with no Yea or Nay from them — Present, Not Voting, and the ones Voteview has no row for at all. That last case matters: the Speaker votes at his own discretion and is simply absent from a large share of House rollcalls, which a row count would score as perfect attendance. Bounding by first and last vote keeps members who arrived or left mid-congress from being charged for votes held outside their service. Showing up is not the same thing as being independent, so the two numbers stay apart.
 
 Yea and Nay each cover a range of Voteview cast codes (1–3 and 4–6); all of them are counted. Only decisive Yea/Nay votes go into the score denominators. Scores are cumulative over the whole term rather than a rolling window, which is why they barely move week to week. Members with fewer than `MIN_VOTES` (30) recorded votes are left unscored — too small a denominator to mean anything.
+
+The table shows nine columns; `party_unity_pct`, `consensus_loyalty_pct` and the rest stay in `data.json` and on each member's page rather than widening it further.
 
 **Floor leaders are flagged, not excluded.** The Speaker plus each party's leader and whip in each chamber carry a `leadership` field; the table badges them and the filter can hide or isolate them. They schedule the votes they then vote on, so their loyalty is partly loyalty to an agenda they set themselves — in the 119th the Speaker came out the single most loyal member of his caucus, on the subset of votes he chose to cast. Excluding them outright would drop the first names anyone looks up, so the call is left to the reader.
 

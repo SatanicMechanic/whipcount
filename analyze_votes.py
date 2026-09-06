@@ -324,23 +324,31 @@ for key, parties in tally.items():
     info["vote_type"] = "consensus" if info["D_pos"] == info["R_pos"] else "partisan"
     positions[key] = info
 
-# ── Label ──────────────────────────────────────────────────────────────────────
-# (threshold, label) pairs, ascending — mirrors LABELS/scoreColor in docs/index.html
-LABEL_THRESHOLDS = [
-    (1.0,  "Mindless Drone"),
-    (5.0,  "Yes Man"),
-    (10.0, "Reluctant Rebel"),
-    (20.0, "Frequent Dissenter"),
-    (30.0, "Rebellious Streak"),
-    (float("inf"), "Lone Wolf"),
+# ── Score bands ────────────────────────────────────────────────────────────────
+# The one place the bands are defined. It ships in data.json as "tiers", and the
+# site builds its legend, filter options, histogram axis, ranges and badge colors
+# from that — so a rename lands here and nowhere else. Colors are var(--s{id}) in
+# the stylesheet, keyed by id for the same reason.
+# "max" is exclusive: a score landing exactly on it takes the next tier up.
+# Everything downstream keys on the id, not the name: history snapshots archive
+# label_dist by tier, so a rename can never desync an old snapshot from a new one.
+TIERS = [
+    {"id": 0, "max": 1.0,  "name": "Mindless Drone"},
+    {"id": 1, "max": 5.0,  "name": "Bobblehead"},
+    {"id": 2, "max": 10.0, "name": "Squeaky Wheel"},
+    {"id": 3, "max": 20.0, "name": "Loose Cannon"},
+    {"id": 4, "max": 30.0, "name": "Heretic"},
+    {"id": 5, "max": None, "name": "Lone Wolf"},
 ]
-LABELS = [label for _, label in LABEL_THRESHOLDS]
+
+def independence_tier(score_pct):
+    s = round(score_pct, 2)   # round first: the label must agree with the number shown
+    for t in TIERS:
+        if t["max"] is None or s < t["max"]:
+            return t["id"]
 
 def independence_label(score_pct):
-    s = round(score_pct, 2)
-    for threshold, label in LABEL_THRESHOLDS:
-        if s < threshold:
-            return label
+    return TIERS[independence_tier(score_pct)]["name"]
 
 def pct(x):
     return round(x * 100, 2) if x is not None else None
@@ -400,9 +408,16 @@ for icpsr, cast in by_member.items():
     cons_loy = 1 - n_cons_defect / n_cons if n_cons else None
     c_dev = (1 - cons_loy) if cons_loy is not None else None
 
-    if   p_dev is not None and c_dev is not None: ind = (p_dev + c_dev) / 2
-    elif p_dev is not None:                       ind = p_dev
-    else:                                         ind = c_dev
+    # The headline score is cohesion-weighted partisan deviation alone. It used to be
+    # the mean of that and consensus deviation, but the two are not the same behavior
+    # and do not share a scale: consensus deviation runs ~6x larger (median 3.5% vs
+    # 0.6%), so the mean tracked it at r=0.96 and the party-discipline signal — the
+    # actual subject of the site — contributed almost nothing. Consensus deviation is
+    # published beside the score instead of blended into it.
+    # No fallback to c_dev when a member has no partisan votes: scoring them on the
+    # other scale is the same mix in miniature, and 30 consensus-only votes is a
+    # reachable way to clear MIN_VOTES. They go out unscored; the site renders that.
+    ind = p_dev
 
     dissents.sort(key=lambda d: d.get("date", ""), reverse=True)
     dissents_by_member[icpsr] = dissents
@@ -417,6 +432,8 @@ for icpsr, cast in by_member.items():
         "leadership":          LEADERSHIP.get(icpsr),
         "district":            int(m["district_code"]) if m["chamber"] == "House" else None,
         "independence_score":  pct(ind),
+        # Both: the tier drives every lookup, the name keeps the JSON readable.
+        "independence_tier":   independence_tier(ind * 100) if ind is not None else None,
         "independence_label":  independence_label(ind * 100) if ind is not None else None,
         "party_unity_pct":     pct(party_unity),
         "weighted_partisan_deviation_pct": pct(p_dev),
@@ -443,10 +460,10 @@ def group_stats(subset):
         "min_independence": round(min(scores), 2),
         "max_independence": round(max(scores), 2),
         "avg_missed_pct": round(sum(missed_pcts) / len(missed_pcts), 2) if missed_pcts else None,
-        "label_dist": {
-            label: sum(1 for r in subset if r["independence_label"] == label)
-            for label in LABELS
-        }
+        # A list indexed by tier id, not a dict keyed by name: this is archived
+        # weekly and must survive a rename of the bands.
+        "label_dist": [sum(1 for r in subset if r["independence_tier"] == t["id"])
+                       for t in TIERS]
     }
 
 summary = {
@@ -464,6 +481,7 @@ now = datetime.now(timezone.utc)
 output = {
     "updated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
     "congress":   CONGRESS,
+    "tiers":      TIERS,
     "summary":    summary,
     "members":    members,
 }

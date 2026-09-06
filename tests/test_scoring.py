@@ -142,6 +142,21 @@ def check_congress_rollover(data_dir, out_dir):
         assert congress_on(day) == want, f"{day}: got {congress_on(day)}, want {want}"
 
 
+def check_label_boundaries():
+    """Label boundaries are exclusive-below: a score landing exactly on a threshold
+    takes the higher label. Checked on the function rather than through a fixture
+    tuned to hit each cut point — the boundary is a property of the function.
+    Call after check_congress_rollover, which is what imports the module."""
+    from importlib import import_module
+    label = import_module("analyze_votes").independence_label
+    for score, want in ((0.0, "Mindless Drone"), (0.99, "Mindless Drone"),
+                        (1.0, "Bobblehead"), (4.99, "Bobblehead"),
+                        (5.0, "Squeaky Wheel"), (10.0, "Loose Cannon"),
+                        (20.0, "Heretic"), (30.0, "Lone Wolf"),
+                        (100.0, "Lone Wolf")):
+        assert label(score) == want, f"{score}: got {label(score)}, want {want}"
+
+
 def run_script(data_dir, out_dir, report):
     """Run analyze_votes.py offline; return (exit code, report text)."""
     env = {**os.environ, "VOTES_DATA_DIR": str(data_dir), "VOTES_OUT_DIR": str(out_dir),
@@ -315,6 +330,7 @@ def main():
         data_dir.mkdir()
         build_fixture(data_dir)
         check_congress_rollover(data_dir, tmp / "import_out")
+        check_label_boundaries()
         check_schema_drift(tmp)
         check_chamber_switcher(tmp)
 
@@ -401,15 +417,39 @@ def main():
         assert all("leadership" in m for m in data["members"])
         assert sum(m["leadership"] is not None for m in data["members"]) == 1
 
-        # ── label thresholds (boundaries are exclusive-below) ─────────────────
+        # ── the score is partisan deviation alone ─────────────────────────────
+        # Consensus deviation is reported but never folded in. icpsr 4 and 5 are the
+        # proof: both are perfectly loyal on partisan votes and dissent only from
+        # bipartisan consensus (4 on one roll, 5 on two), which used to average them
+        # up to 5.0 and 10.0. On party discipline they are drones, and now score it.
         assert by_icpsr[1]["independence_score"] == 0.0
-        assert by_icpsr[1]["independence_label"] == "Mindless Drone"
-        assert by_icpsr[9]["independence_score"] == 1.69
-        assert by_icpsr[9]["independence_label"] == "Yes Man"
-        assert by_icpsr[4]["independence_score"] == 5.0      # exactly on 5
-        assert by_icpsr[4]["independence_label"] == "Reluctant Rebel"
-        assert by_icpsr[5]["independence_score"] == 10.0     # exactly on 10
-        assert by_icpsr[5]["independence_label"] == "Frequent Dissenter"
+        assert by_icpsr[1]["independence_tier"] == 0
+        assert by_icpsr[9]["independence_score"] == 3.39     # == its weighted partisan
+        assert by_icpsr[9]["independence_tier"] == 1
+        for i, cons_dev in ((4, 10.0), (5, 20.0)):
+            assert by_icpsr[i]["consensus_deviation_pct"] == cons_dev
+            assert by_icpsr[i]["weighted_partisan_deviation_pct"] == 0.0
+            assert by_icpsr[i]["independence_score"] == 0.0, by_icpsr[i]
+            assert by_icpsr[i]["independence_tier"] == 0
+
+        # ── the tier table ships with the data ───────────────────────────────
+        # The site builds its legend, filter, axis and colours from this; if it
+        # stops being published every one of those silently empties.
+        tiers = data["tiers"]
+        assert [t["id"] for t in tiers] == list(range(len(tiers)))
+        assert tiers[-1]["max"] is None, "the top band must be open-ended"
+        assert all(t["max"] is not None for t in tiers[:-1])
+        assert [t["max"] for t in tiers[:-1]] == sorted(t["max"] for t in tiers[:-1])
+        # label is the tier's name, always — the two can never disagree
+        for m in data["members"]:
+            if m["independence_tier"] is not None:
+                assert m["independence_label"] == tiers[m["independence_tier"]]["name"]
+
+        # label_dist is a list indexed by tier id, so an archived snapshot keeps
+        # its meaning through a rename of the bands
+        dist = data["summary"]["all"]["label_dist"]
+        assert isinstance(dist, list) and len(dist) == len(tiers)
+        assert sum(dist) == data["summary"]["all"]["count"]
 
         # ── bill context joined onto dissents ─────────────────────────────────
         assert d4[0]["bill_number"] == "HR31" and d4[0]["vote_result"] == "Passed"
