@@ -393,9 +393,6 @@ def independence_tier(score_pct):
         if t["max"] is None or s < t["max"]:
             return t["id"]
 
-def independence_label(score_pct):
-    return TIERS[independence_tier(score_pct)]["name"]
-
 def pct(x):
     return round(x * 100, 2) if x is not None else None
 
@@ -480,9 +477,10 @@ for icpsr, cast in by_member.items():
         "chamber":             m["chamber"],
         "leadership":          LEADERSHIP.get(icpsr),
         "independence_score":  pct(ind),
-        # Both: the tier drives every lookup, the name keeps the JSON readable.
+        # The id only: "tiers" is three lines up in the same file, so the name is a
+        # local join, and a stored copy of a derived value is the thing this index
+        # deliberately does not publish.
         "independence_tier":   independence_tier(ind * 100) if ind is not None else None,
-        "independence_label":  independence_label(ind * 100) if ind is not None else None,
         # party_unity_pct is the one derived rate that stays: the page documents it
         # by name as the unweighted alternative to the score.
         "party_unity_pct":     pct(party_unity),

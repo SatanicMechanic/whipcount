@@ -21,6 +21,11 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'   # the browser check drives Chrome over node's built-in WebSocket
+
       - name: Install dependencies
         run: pip install -r requirements.txt
 
@@ -37,6 +42,10 @@ jobs:
       - name: Run self-check
         run: python3 tests/test_scoring.py
 
-      # Node is preinstalled on ubuntu-latest; the site check has no dependencies.
+      # No dependencies for either: the site check stubs the DOM, and the browser
+      # check drives the Chrome that ubuntu-latest already ships.
       - name: Run site self-check
         run: node tests/test_site.mjs
+
+      - name: Run browser self-check
+        run: node tests/test_browser.mjs

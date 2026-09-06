@@ -193,7 +193,7 @@ document.querySelectorAll = () => [];
 console.log("\nThird-party resources");
 const external = [...html.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)]
   .map(m => m[1])
-  .filter(u => !/^https:\/\/(grokipedia\.com|voteview\.com)/.test(u));   // <a> links, not resources
+  .filter(u => !/^https:\/\/voteview\.com/.test(u));   // the data credit in the footer, an <a>
 check("no third-party resources loaded", external.length === 0, external.join(" "));
 check("CSP declared", /http-equiv="Content-Security-Policy"/.test(html));
 check("fonts are served from this repo",

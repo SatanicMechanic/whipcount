@@ -142,19 +142,16 @@ def check_congress_rollover(data_dir, out_dir):
         assert congress_on(day) == want, f"{day}: got {congress_on(day)}, want {want}"
 
 
-def check_label_boundaries():
-    """Label boundaries are exclusive-below: a score landing exactly on a threshold
-    takes the higher label. Checked on the function rather than through a fixture
+def check_tier_boundaries():
+    """Tier boundaries are exclusive-below: a score landing exactly on a threshold
+    takes the higher tier. Checked on the function rather than through a fixture
     tuned to hit each cut point — the boundary is a property of the function.
     Call after check_congress_rollover, which is what imports the module."""
     from importlib import import_module
-    label = import_module("analyze_votes").independence_label
-    for score, want in ((0.0, "Mindless Drone"), (0.99, "Mindless Drone"),
-                        (1.0, "Bobblehead"), (4.99, "Bobblehead"),
-                        (5.0, "Squeaky Wheel"), (10.0, "Loose Cannon"),
-                        (20.0, "Heretic"), (30.0, "Lone Wolf"),
-                        (100.0, "Lone Wolf")):
-        assert label(score) == want, f"{score}: got {label(score)}, want {want}"
+    tier = import_module("analyze_votes").independence_tier
+    for score, want in ((0.0, 0), (0.99, 0), (1.0, 1), (4.99, 1), (5.0, 2),
+                        (10.0, 3), (20.0, 4), (30.0, 5), (100.0, 5)):
+        assert tier(score) == want, f"{score}: got {tier(score)}, want {want}"
 
 
 def run_script(data_dir, out_dir, report):
@@ -377,7 +374,7 @@ def main():
         data_dir.mkdir()
         build_fixture(data_dir)
         check_congress_rollover(data_dir, tmp / "import_out")
-        check_label_boundaries()
+        check_tier_boundaries()
         check_schema_drift(tmp)
         check_chamber_switcher(tmp)
 
@@ -486,11 +483,6 @@ def main():
         assert tiers[-1]["max"] is None, "the top band must be open-ended"
         assert all(t["max"] is not None for t in tiers[:-1])
         assert [t["max"] for t in tiers[:-1]] == sorted(t["max"] for t in tiers[:-1])
-        # label is the tier's name, always — the two can never disagree
-        for m in data["members"]:
-            if m["independence_tier"] is not None:
-                assert m["independence_label"] == tiers[m["independence_tier"]]["name"]
-
         # label_dist is a list indexed by tier id, so an archived snapshot keeps
         # its meaning through a rename of the bands
         dist = data["summary"]["all"]["label_dist"]

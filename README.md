@@ -23,7 +23,7 @@ The consensus column carries its denominator (`62% of 67`) because the chambers 
 | 4 | 20–30%| Heretic |
 | 5 | 30%+  | Lone Wolf |
 
-The bands live in exactly one place — `TIERS` in `analyze_votes.py` — and ship in `data.json` as `tiers`. The site builds its scale legend, filter options, histogram axis, ranges and every badge colour from that table, so renaming a band is a one-line edit and the browser test reads the names back out of the Python to prove it. Members carry both `independence_tier` (the id, what everything keys on) and `independence_label` (the name, so the JSON reads on its own). Snapshot distributions are archived as `label_dist`, a list indexed by tier id rather than a dict keyed by name: the archive is the one thing that cannot be regenerated, and it has to survive a rename.
+The bands live in exactly one place — `TIERS` in `analyze_votes.py` — and ship in `data.json` as `tiers`. The site builds its scale legend, filter options, histogram axis, ranges and every badge colour from that table, so renaming a band is a one-line edit and the browser test reads the names back out of the Python to prove it. Members carry `independence_tier` — the id only, since `tiers` is in the same file and a stored copy of a derived name is one more thing that can drift. Snapshot distributions are archived as `label_dist`, a list indexed by tier id rather than a dict keyed by name: the archive is the one thing that cannot be regenerated, and it has to survive a rename.
 
 **Attendance** is tracked separately and does *not* feed into the score. Over every rollcall their chamber held between their first and last recorded vote, `missed %` counts the ones with no Yea or Nay from them — Present, Not Voting, and the ones Voteview has no row for at all. That last case matters: the Speaker votes at his own discretion and is simply absent from a large share of House rollcalls, which a row count would score as perfect attendance. Bounding by first and last vote keeps members who arrived or left mid-congress from being charged for votes held outside their service. Showing up is not the same thing as being independent, so the two numbers stay apart.
 
@@ -32,6 +32,18 @@ Yea and Nay each cover a range of Voteview cast codes (1–3 and 4–6); all of 
 The table shows nine columns; `party_unity_pct` and the per-vote detail stay in `data.json` and on each member's page rather than widening it further. Fields nothing reads are not published: `consensus_loyalty_pct` was `100 - consensus_deviation_pct`, `weighted_partisan_deviation_pct` became a duplicate of the score when the score stopped being a blend, and `district` was never rendered.
 
 **Floor leaders are flagged, not excluded.** The Speaker plus each party's leader and whip in each chamber carry a `leadership` field; the table badges them and the filter can hide or isolate them. They schedule the votes they then vote on, so their loyalty is partly loyalty to an agenda they set themselves — in the 119th the Speaker came out the single most loyal member of his caucus, on the subset of votes he chose to cast. Excluding them outright would drop the first names anyone looks up, so the call is left to the reader.
+
+## Self-checks
+
+Three suites, no dependencies between them and none installed for them:
+
+| | What it covers |
+|---|---|
+| `python3 tests/test_scoring.py` | The scoring pipeline against a synthetic Voteview fixture, plus every upstream-drift path |
+| `node tests/test_site.mjs` | The page's functions against a stub DOM — sorting, filtering, the trend gate, the tier table |
+| `node tests/test_browser.mjs` | The real page in a real browser: CSP violations, console errors, failed requests, what actually rendered |
+
+The browser check exists because the other two cannot see what the browser decides. It builds the fixture site, serves it over HTTP so `'self'` means something, and drives a headless Chromium over the remote-debugging protocol using node's built-in WebSocket — no browser-automation dependency and no downloaded browser binaries. It picks up Chrome, Chromium, Edge or Brave, in that order; `CHROME_PATH` overrides. It gates the weekly publish, which force-pushes the site with nobody watching.
 
 ## History
 
