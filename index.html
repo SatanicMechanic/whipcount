@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mavericks &amp; Sycophants · U.S. Congressional Independence Index</title>
+<meta name="description" content="How often each member of Congress votes against their own party — scored, ranked and updated weekly from Voteview rollcall data.">
+<meta name="theme-color" content="#0c0c0f">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mavericks &amp; Sycophants">
+<meta property="og:description" content="How often each member of Congress votes against their own party — scored, ranked and updated weekly from Voteview rollcall data.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%97%B3%3C/text%3E%3C/svg%3E">
+<!-- Content-Security-Policy, delivered as meta because GitHub Pages cannot set
+     response headers at all. That also rules out HSTS, X-Frame-Options and
+     nosniff here — they are header-only and need a CDN in front to add.
+     frame-ancestors is omitted deliberately: it is ignored in a meta policy.
+     'unsafe-inline' is load-bearing — this is a single-file site with one inline
+     <style>, one inline <script>, and generated style="" attributes throughout.
+     default-src 'self' rather than 'none' so a same-origin resource nobody
+     remembered still loads; the point of the policy is that no third-party
+     origin can execute here, and that holds either way. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<style>
+  /* Fonts are served from this repo, not fonts.gstatic.com. Google's CSS is
+     UA-dependent, so SRI on it is not viable, and a stylesheet from a third party
+     is a third party that can restyle the page. Latin subset only: no member name
+     in the 119th carries a character above U+00FF. If one ever does, that glyph
+     falls back to a system font — re-run the latin-ext faces from Google's CSS.
+     Bebas Neue, DM Mono and DM Sans are all SIL Open Font License 1.1. */
+  @font-face {
+    font-family: 'Bebas Neue';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(fonts/bebas-neue-400-latin.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: 'DM Mono';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(fonts/dm-mono-400-latin.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: 'DM Mono';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url(fonts/dm-mono-500-latin.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: 'DM Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(fonts/dm-sans-400-latin.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: 'DM Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url(fonts/dm-sans-400-latin.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+
+  :root {
+    --bg:        #0c0c0f;
+    --surface:   #13131a;
+    --border:    #1e1e2e;
+    --text:      #e2e2e8;
+    --muted:     #8a8aa0;   /* 4.9:1 on --bg; the old #6b6b80 was 3.4:1 at .72rem */
+    --dem:       #4a9eff;
+    --rep:       #ff5f5f;
+    /* Not duplicates of --dem/--rep: one step darker, validated for 2px strokes on
+       --surface (adjacent CVD ΔE 21.8 protan, 31.1 normal, contrast >= 3:1). The
+       pill colors sit just above the L 0.67 dark-mode ceiling and are wrong here. */
+    --dem-line:  #4590e8;
+    --rep-line:  #f05555;
+    --ind:       #a78bfa;
+    --accent:    #f0c040;
+
+    /* One per tier id in analyze_votes.py's TIERS — --s{id}. Adding a band means
+       adding a colour here; nothing else on the page counts them. */
+    --s0: #ff3b3b;
+    --s1: #ff7a30;
+    --s2: #ffb020;
+    --s3: #c8e000;
+    --s4: #60d480;
+    --s5: #30e8c0;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important; scroll-behavior: auto !important;
+    }
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;   /* 300 is unreadable at the .72rem this page uses for numbers */
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Grid background ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Header ── */
+  header {
+    position: relative;
+    z-index: 1;
+    padding: 3rem 2rem 2rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(240,192,64,.06) 0%, transparent 100%);
+  }
+
+  .header-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* Announces one methodology change to people who saw the old numbers, then
+     retires itself on a date. Deliberately not permanent furniture. */
+  .banner {
+    position: relative; z-index: 2;
+    display: flex; align-items: center; gap: 1rem;
+    max-width: 1400px; margin: 0 auto; padding: .7rem 2rem;
+    font-size: .8rem; color: var(--text);
+    background: rgba(240,192,64,.1);
+    border-bottom: 1px solid rgba(240,192,64,.25);
+  }
+  .banner a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  .banner-x {
+    margin-left: auto; flex-shrink: 0;
+    background: none; border: 0; cursor: pointer;
+    color: var(--muted); font-size: 1.1rem; line-height: 1; padding: .2rem .4rem;
+  }
+  .banner-x:hover { color: var(--text); }
+  @media (max-width: 700px) { .banner { padding: .7rem 1rem; } }
+
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: .5rem;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 8vw, 6rem);
+    line-height: .95;
+    letter-spacing: .02em;
+    color: #fff;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    margin-top: .75rem;
+    color: var(--muted);
+    font-size: .95rem;
+    max-width: 600px;
+    line-height: 1.6;
+  }
+
+  /* The methodology lives under the table; this is the way to it. Inline in the
+     subtitle rather than a nav bar — one link does not need furniture. */
+  .jump {
+    display: inline-block;
+    margin-left: .35rem;
+    font-family: 'DM Mono', monospace;
+    font-size: .72rem;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(240,192,64,.4);
+    white-space: nowrap;
+  }
+  .jump:hover { text-decoration-color: var(--accent); }
+
+  .updated {
+    margin-top: 1rem;
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    color: var(--muted);
+    letter-spacing: .1em;
+  }
+
+  /* ── Summary cards ── */
+  .summary {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 2.5rem auto;
+    padding: 0 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+
+  /* Distribution histogram — one bar per tier. It doubles as the scale legend:
+     chip, range and name sit under each bar, so the bands are defined in exactly
+     one place on screen as well as one place in the source. */
+  .hist {
+    position: relative; z-index: 1;
+    max-width: 1400px; margin: 2.5rem auto; padding: 0 2rem;
+  }
+  .hist-head { display: flex; align-items: baseline; gap: .75rem; margin-bottom: .9rem; }
+  .hist-title { font-weight: 500; letter-spacing: .02em; }   /* 500 is the heaviest face shipped */
+  .hist-sub { font-size: .8rem; color: var(--muted); }
+  .hist-grid {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: .5rem;
+    align-items: end; height: 150px;
+  }
+  .hist-col { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+  .hist-n { font-size: .75rem; text-align: center; margin-bottom: .3rem; color: var(--muted); }
+  .hist-bar { border-radius: 3px 3px 0 0; min-height: 2px; }
+  .hist-x {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: .5rem;
+    margin-top: .5rem; font-size: .68rem; line-height: 1.3; text-align: center;
+    color: var(--muted);
+  }
+  .hist-range { color: var(--text); font-family: 'DM Mono', monospace; font-size: .66rem; }
+  .hist-chip {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    margin-right: .35rem; vertical-align: baseline;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .card.dem::before  { background: var(--dem); }
+  .card.rep::before  { background: var(--rep); }
+  .card.all::before  { background: var(--accent); }
+
+  .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: .75rem;
+  }
+
+  .card-count {
+    font-size: .72rem;
+    color: var(--muted);
+    float: right;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Stacked bar */
+  .dist-bar {
+    display: flex;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: .85rem;
+    gap: 1px;
+  }
+
+  .dist-bar-seg { transition: flex .4s; }
+
+  /* Label rows */
+  .dist-rows { display: flex; flex-direction: column; gap: .3rem; }
+
+  .dist-row {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .72rem;
+  }
+
+  .dist-row-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .dist-row-name {
+    flex: 1;
+    color: #b0b0c0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dist-row-val {
+    font-family: 'DM Mono', monospace;
+    font-size: .68rem;
+    color: var(--muted);
+    min-width: 28px;
+    text-align: right;
+  }
+
+  /* Colored text on a same-hue translucent ground was the lowest-contrast pair on
+     the page. The hue moves to a dot; the text is the normal body color. */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem;
+    padding: .25rem .6rem;
+    border-radius: 2px;
+    font-weight: 500;
+    letter-spacing: .05em;
+    white-space: nowrap;
+  }
+
+  .badge-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Controls ── */
+  /* Trend — validated against #13131a in dark mode: adjacent CVD ΔE 21.8
+     (protan), normal-vision 31.1, contrast >= 3:1. One step darker than the
+     --dem/--rep pill colors, which sit just above the L 0.67 dark-mode ceiling. */
+  .trend {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 2.5rem auto;
+    padding: 0 2rem;
+  }
+  .trend-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .trend-title { font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; }
+  .trend-sub   { font-size: .7rem; color: var(--muted); }
+  .trend-legend { display: flex; gap: 1rem; margin-left: auto; font-size: .7rem; }
+  .trend-key { display: flex; align-items: center; gap: .4rem; color: var(--muted); }
+  .trend-key i { width: 14px; height: 2px; border-radius: 1px; display: block; }
+  /* Before the archive qualifies the section explains itself instead of vanishing. */
+  #trend:not([data-state="ready"]) .trend-legend { display: none; }
+  .trend-ghost {
+    grid-column: 1 / -1;
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    font-size: .8rem;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+  .trend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 1rem;
+  }
+  .trend-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.25rem 1.5rem 1rem;
+  }
+  .trend-panel h4 {
+    font-size: .7rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 .75rem;
+    font-weight: 500;
+  }
+  .trend-panel svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .trend-panel .gridline { stroke: var(--border); stroke-width: 1; }
+  .trend-panel .axis-lbl { fill: var(--muted); font-size: 9px; font-family: 'DM Mono', monospace; }
+  .trend-panel .series    { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .trend-panel .end-dot   { stroke: var(--surface); stroke-width: 2; }
+  .trend-panel .end-lbl   { fill: var(--text); font-size: 10px; font-family: 'DM Mono', monospace; }
+  .trend-panel .hit       { fill: transparent; cursor: crosshair; }
+  .trend-panel .crosshair { stroke: var(--muted); stroke-width: 1; opacity: 0; }
+  .trend-tip {
+    position: fixed;
+    pointer-events: none;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: .5rem .65rem;
+    font-size: .7rem;
+    font-family: 'DM Mono', monospace;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity .1s;
+    z-index: 50;
+  }
+  .trend-tip .tip-date { color: var(--muted); margin-bottom: .3rem; }
+  .trend-tip .tip-row  { display: flex; gap: .6rem; justify-content: space-between; }
+  .trend-tip .tip-row i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+  .lead-badge {
+    background: rgba(255,255,255,.06);
+    color: var(--muted);
+    margin-left: .5rem;
+    font-size: .55rem;
+    text-transform: uppercase;
+  }
+
+  .controls {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto 1.5rem;
+    padding: 0 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    align-items: center;
+  }
+
+  .search-wrap {
+    flex: 1;
+    min-width: 200px;
+    max-width: 340px;
+    position: relative;
+  }
+
+  .search-wrap svg {
+    position: absolute;
+    left: .75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  input[type=search], select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .85rem;
+    padding: .55rem .75rem;
+    outline: none;
+    transition: border-color .2s;
+  }
+
+  input[type=search] {
+    width: 100%;
+    padding-left: 2.2rem;
+  }
+
+  input[type=search]:focus, select:focus { border-color: var(--accent); }
+
+  select {
+    cursor: pointer;
+    appearance: none;
+    padding-right: 2rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8aa0' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right .6rem center;
+  }
+
+  .count-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  /* ── Table ── */
+  .table-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto 4rem;
+    padding: 0 2rem;
+  }
+
+  /* No overflow on the wrapper at desktop widths, deliberately: any scroll
+     container here becomes the sticky thead's scrollport, so the header would
+     stick to a box that never scrolls instead of to the viewport. Below the
+     breakpoint the table genuinely needs to scroll sideways and gives that up. */
+  @media (max-width: 1100px) {
+    .table-wrap { overflow-x: auto; }
+    thead th { position: static; }
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .82rem;
+  }
+
+  thead th {
+    font-family: 'DM Mono', monospace;
+    font-size: .62rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: .6rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  thead th:hover { color: var(--text); }
+  thead th.sorted { color: var(--accent); }
+
+  thead th .sort-arrow { margin-left: .3rem; opacity: .5; }
+  thead th.sorted .sort-arrow { opacity: 1; }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    transition: background .1s;
+  }
+
+  tbody tr:hover { background: rgba(255,255,255,.03); }
+
+  td {
+    padding: .65rem 1rem;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .td-name {
+    font-weight: 500;
+    color: #fff;
+    white-space: normal;
+    min-width: 180px;
+  }
+
+  /* the anchor carries keyboard access and open-in-new-tab; the row click
+     handler is only a mouse convenience on top of it */
+  .td-name a { color: inherit; text-decoration: none; }
+  .td-name a:hover,
+  .td-name a:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+
+  .party-pill {
+    display: inline-block;
+    width: 1.6rem;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem;
+    font-weight: 500;
+    padding: .15rem 0;
+    border-radius: 2px;
+  }
+
+  .party-D { background: rgba(74,158,255,.15); color: var(--dem); }
+  .party-R { background: rgba(255,95,95,.15);  color: var(--rep); }
+  .party-I { background: rgba(167,139,250,.15);color: var(--ind); }
+
+  /* The bar is gone: at a median score under 1% against a 30% scale every fill
+     was a sliver. The histogram carries the distribution; this column carries
+     the number. */
+  .score-num {
+    font-family: 'DM Mono', monospace;
+    font-size: .8rem;
+  }
+
+  .td-muted {
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: .72rem;
+  }
+
+  .num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .th-note {
+    display: block;
+    font-size: .55rem;
+    letter-spacing: .08em;
+    opacity: .7;
+    text-transform: none;
+  }
+
+  .denom { opacity: .55; font-size: .66rem; }
+
+  .table-note {
+    max-width: 1400px;
+    margin: .9rem auto 0;
+    padding: 0 2rem;
+    font-size: .72rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 4rem 1rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: .8rem;
+    letter-spacing: .1em;
+  }
+
+  /* ── Loading ── */
+  #loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .spinner {
+    width: 36px; height: 36px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #app { display: none; }
+
+  /* ── Footer ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 2rem;
+    border-top: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem;
+    color: var(--muted);
+    letter-spacing: .1em;
+  }
+
+  footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ── Intro ── */
+  .intro {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 800px) { .intro { grid-template-columns: 1fr; } }
+
+  .intro-block h2 {
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: .85rem;
+  }
+
+  .intro-block p {
+    font-size: .9rem;
+    line-height: 1.75;
+    color: #b0b0c0;
+    margin-bottom: .85rem;
+  }
+
+  .intro-block p:last-child { margin-bottom: 0; }
+
+  .intro-block a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(240,192,64,.4);
+  }
+
+  .intro-block a:hover { text-decoration-color: var(--accent); }
+
+  .intro-block summary {
+    cursor: pointer;
+    font-size: .85rem;
+    color: var(--accent);
+    list-style: none;
+    padding: .35rem 0;
+  }
+  .intro-block summary::-webkit-details-marker { display: none; }
+  .intro-block summary::before { content: "▸ "; }
+  .intro-block details[open] summary::before { content: "▾ "; }
+
+  .method-list {
+    list-style: none;
+    margin-top: .5rem;
+  }
+
+  .method-list li {
+    font-size: .85rem;
+    line-height: 1.6;
+    color: #b0b0c0;
+    padding: .5rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: .75rem;
+  }
+
+  .method-list li:last-child { border-bottom: none; }
+
+  .method-list .term {
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    color: var(--accent);
+    min-width: 130px;
+    padding-top: .1rem;
+  }
+
+  /* ── Detail view ── */
+  #detail-view { display: none; }
+
+  .detail {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto 4rem;
+    padding: 2rem;
+  }
+
+  .back-link {
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    letter-spacing: .1em;
+    color: var(--accent);
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+  }
+
+  .back-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  .detail h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.5rem;
+    letter-spacing: .02em;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .detail-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    letter-spacing: .1em;
+    color: var(--muted);
+    margin-top: .5rem;
+  }
+
+  .detail-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1.75rem 0;
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+  }
+
+  .stat-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 1.25rem;
+    color: var(--text);
+  }
+
+  .stat-note { font-size: .7rem; color: var(--muted); margin-top: .35rem; }
+
+  .detail table { margin-top: .5rem; }
+  .detail td { white-space: normal; }
+  .detail .td-desc { color: #b0b0c0; max-width: 460px; }
+
+  tbody tr.clickable { cursor: pointer; }
+
+  /* One breakpoint for the shared 2rem gutter, and the tier names come off the
+     histogram axis — six of them at .6rem are unreadable, the ranges are not. */
+  @media (max-width: 700px) {
+    header, .summary, .hist, .trend, .controls, .table-wrap, .table-note, .intro, .detail {
+      padding-left: 1rem; padding-right: 1rem;
+    }
+    header { padding-top: 2rem; }
+    .hist-name { display: none; }
+    .hist-x { font-size: .62rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <div style="font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.15em;color:var(--muted)">LOADING DATA</div>
+</div>
+
+<div id="app">
+  <div class="banner" id="banner" hidden>
+    <span>The scores and labels changed on 7 September &mdash; the index now measures
+    party discipline alone. <a href="changes.html">What changed and why</a></span>
+    <button type="button" class="banner-x" id="banner-x" aria-label="Dismiss">&times;</button>
+  </div>
+  <header>
+    <div class="header-inner">
+      <div class="eyebrow" id="eyebrow"></div>
+      <h1>Mavericks <span>&</span> Sycophants</h1>
+      <p class="subtitle">The U.S. Congressional Independence Index: how often each
+      member votes against their own party, weighted by how united that party was.
+      <a class="jump" href="#about">How the score works &darr;</a></p>
+      <div class="updated" id="updated-at"></div>
+    </div>
+  </header>
+
+  <div id="main-view">
+  <div class="summary" id="summary-cards"></div>
+
+  <div class="controls">
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="search" id="search" aria-label="Search by name or state"
+             placeholder="Search by name or state…">
+    </div>
+    <select id="filter-chamber" aria-label="Filter by chamber">
+      <option value="">All chambers</option>
+      <option value="House">House</option>
+      <option value="Senate">Senate</option>
+    </select>
+    <select id="filter-party" aria-label="Filter by party">
+      <option value="">All parties</option>
+      <option value="D">Democrat</option>
+      <option value="R">Republican</option>
+      <option value="I">Independent</option>
+    </select>
+    <select id="filter-leadership" aria-label="Filter party leaders">
+      <option value="">Leaders included</option>
+      <option value="exclude">Hide party leaders</option>
+      <option value="only">Party leaders only</option>
+    </select>
+    <!-- Options are appended from data.json's tier table; see init(). -->
+    <select id="filter-label" aria-label="Filter by tier">
+      <option value="">All labels</option>
+    </select>
+    <span class="count-pill" id="count-pill"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table id="main-table">
+      <thead>
+        <tr>
+          <th scope="col" data-col="name">Name <span class="sort-arrow">↕</span></th>
+          <th scope="col" data-col="party">Party <span class="sort-arrow">↕</span></th>
+          <th scope="col" data-col="state">State <span class="sort-arrow">↕</span></th>
+          <th scope="col" data-col="chamber">Chamber <span class="sort-arrow">↕</span></th>
+          <th scope="col" data-col="independence_score" class="num sorted">Independence Score <span class="sort-arrow">↓</span></th>
+          <th scope="col" data-col="missed_pct" class="num">Missed % <span class="sort-arrow">↕</span></th>
+          <th scope="col" data-col="independence_tier">Label <span class="sort-arrow">↕</span></th>
+          <th scope="col" data-col="consensus_deviation_pct" class="num">Consensus Dev. <span class="sort-arrow">↕</span>
+            <span class="th-note">grouped by chamber</span></th>
+          <th scope="col" data-col="partisan_votes" class="num">Partisan Votes <span class="sort-arrow">↕</span></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <p class="table-note">
+    Consensus deviation carries its denominator because the two chambers do not
+    supply comparable ones. Most of the House's bipartisan votes are
+    suspension-of-the-rules bills — the classic noncontroversial passage vote — and it
+    holds roughly three times as many of them as the Senate, whose bucket is mostly
+    cloture motions and motions to proceed that happened to align. A single Senate
+    defection therefore moves the rate about three times as far. Sorting by this column
+    groups the chambers rather than ranking them against each other.
+  </p>
+
+  <div class="hist" id="hist">
+    <div class="hist-head">
+      <span class="hist-title">Where everyone lands</span>
+      <span class="hist-sub" id="hist-sub"></span>
+    </div>
+    <div class="hist-grid" id="hist-grid" role="img" aria-label=""></div>
+    <div class="hist-x" id="hist-x"></div>
+  </div>
+
+  <!-- Present from the start: renderTrend() sets data-state="ready" when the archive
+       qualifies, and until then the ghost below says why there is no chart. -->
+  <div class="trend" id="trend">
+    <div class="trend-head">
+      <span class="trend-title">Caucus drift</span>
+      <span class="trend-sub" id="trend-sub"></span>
+      <span class="trend-legend">
+        <span class="trend-key"><i style="background:var(--dem-line)"></i>Democrat</span>
+        <span class="trend-key"><i style="background:var(--rep-line)"></i>Republican</span>
+      </span>
+    </div>
+    <div class="trend-grid" id="trend-grid">
+      <p class="trend-ghost">Caucus drift appears once the archive covers a term from
+      its start — three or more weekly snapshots, the first within 90 days of the
+      Congress convening, and no gap longer than 45 days. A term the archive only
+      caught the tail of would plot a flat line by construction, so it gets no chart.</p>
+    </div>
+  </div>
+  <div class="trend-tip" id="trend-tip"></div>
+
+  <div class="intro" id="about">
+    <div class="intro-block">
+      <h2>Welcome</h2>
+      <p>This site tracks how often members of Congress vote as part of the two-headed
+      Borg. Deviation is applauded in this framing, serving as an indicator of those
+      voting their conscience rather than buckling to the whip.
+      Other scorecards use ostensibly positive labels such as "Party Loyalty" or
+      "Ideological Alignment"; we lean hard the other way and give a shout out to those
+      who buck the trend. Read the scale upside down and it works as a straight loyalty
+      tracker.</p>
+      <p>Most scorecards measure how often a member votes with their party when the two
+      parties disagree. That's useful, but it misses half the picture. When both party
+      leaderships agree, those votes are typically invisible to standard analyses. The
+      consensus deviation score captures how often a member breaks from bipartisan
+      agreement — the moments when the Borg collectively wants a Yea, and someone votes
+      No anyway. It sits beside the Independence score rather than inside it; the two
+      measure different things and the scale would flatter one at the other's expense.</p>
+      <p>Breaking ranks is also not worth the same on every vote. Defecting when your
+      party votes as a bloc is real independence; landing on the losing side of a 50/50
+      party split is not, so partisan deviation is weighted by how united the party was
+      on each vote. That weighted number <em>is</em> the Independence score, and it is
+      unkind: most of Congress sits under 1%, which is to say most of Congress almost
+      never breaks ranks at all. &ldquo;Where everyone lands&rdquo;, above, is the shape of that.</p>
+    </div>
+    <div class="intro-block">
+      <h2>Methodology</h2>
+      <details>
+        <summary>Every definition, in full</summary>
+      <ul class="method-list">
+        <li>
+          <span class="term">What's counted</span>
+          <span>Recorded Yea and Nay votes cast during the Congress shown. Scores are cumulative across the whole term, not a rolling window — which is why they barely move week to week.</span>
+        </li>
+        <li>
+          <span class="term">Partisan deviation</span>
+          <span>On votes where the two parties split, how often the member voted against their own party's majority — each vote weighted by the party's cohesion on it, from 1.0 for a unanimous party down to 0.0 for an even split. The unweighted rate is still published in the data as <code>party_unity_pct</code>.</span>
+        </li>
+        <li>
+          <span class="term">Consensus deviation</span>
+          <span>On votes where both party majorities agreed, how often the member broke from that bipartisan consensus. Not weighted.</span>
+        </li>
+        <li>
+          <span class="term">Independence score</span>
+          <span>Weighted partisan deviation, expressed as a percentage. Higher = more independent from leadership. Consensus deviation is <em>not</em> folded in: it runs about six times larger, so averaging the two produced a number that tracked consensus deviation almost perfectly and said little about party discipline. The two are reported side by side instead.</span>
+        </li>
+        <li>
+          <span class="term">Attendance</span>
+          <span>Tracked separately and deliberately kept out of the score — showing up is not the same thing as being independent. Over every rollcall their chamber held between their first and last recorded vote, <em>missed %</em> counts the ones with no Yea or Nay from them: Present, Not Voting, and rollcalls with no row for them at all.</span>
+        </li>
+        <li>
+          <span class="term">Party leaders</span>
+          <span>The Speaker plus each party's leader and whip in each chamber are badged, not excluded. They schedule the votes they then vote on, so their loyalty is partly loyalty to an agenda they set themselves. Use the filter to hide or isolate them.</span>
+        </li>
+        <li>
+          <span class="term">Who's left out</span>
+          <span>Members with fewer than 30 recorded votes — too few to produce a meaningful score. Also the President, whose announced positions Voteview records as cast votes, and the six non-voting delegates, who are barred from final-passage votes and so can't be ranked against members who aren't.</span>
+        </li>
+        <li>
+          <span class="term">Independents</span>
+          <span>Members displayed as Independent are scored against the caucus they align with. Any independent with no caucus to deviate from is left out.</span>
+        </li>
+      </ul>
+      </details>
+    </div>
+  </div>
+
+  </div>
+
+  <div id="detail-view" class="detail"></div>
+</div>
+
+<footer>
+  Data: <a href="https://voteview.com" target="_blank">Voteview.com</a> —
+  Lewis, Poole, Rosenthal, Boche, Rudkin &amp; Sonnet (2024), <em>Voteview: Congressional Votes and Ideology</em> ·
+  Built with GitHub Actions + Pages
+</footer>
+
+<script>
+function esc(s) {
+  return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// The score bands, straight out of data.json — analyze_votes.py owns them. The
+// legend, the filter options, the histogram axis and every badge colour are
+// generated from this, so renaming a band is a one-line change in the Python.
+let TIERS = [];
+let allMembers = [];
+let sortCol = "independence_score";
+let sortDir = -1; // -1 = desc
+
+function pct(v) {
+  if (v == null) return "—";
+  return v.toFixed(1) + "%";
+}
+
+// Colours are keyed by tier id in the stylesheet (--s0 … --s5), so nothing here
+// has to know a hex value or a band name.
+const tierColor = id => id == null ? "var(--muted)" : `var(--s${id})`;
+const tierName  = id => (TIERS[id] || {}).name ?? "—";
+
+// "<1%", "1–5%", … derived from the same thresholds that assign the tier.
+const trim = n => String(+n);
+function tierRange(id) {
+  const lo = id > 0 ? TIERS[id - 1].max : null, hi = TIERS[id].max;
+  if (lo == null) return `<${trim(hi)}%`;
+  if (hi == null) return `${trim(lo)}%+`;
+  return `${trim(lo)}–${trim(hi)}%`;
+}
+
+// The filter's options; the value is the tier id, which is what filteredMembers
+// compares against. Named so the self-check can assert on it without a DOM.
+const tierOptions = () =>
+  TIERS.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
+
+function renderSummaryCards(summary) {
+  const cards = [
+    { key: "all",        label: "All Members",  cls: "all" },
+    { key: "house_dem",  label: "House · Dem",  cls: "dem" },
+    { key: "house_rep",  label: "House · Rep",  cls: "rep" },
+    { key: "senate_dem", label: "Senate · Dem", cls: "dem" },
+    { key: "senate_rep", label: "Senate · Rep", cls: "rep" },
+  ];
+
+  const container = document.getElementById("summary-cards");
+  container.innerHTML = cards.map(c => {
+    // Early in a Congress nobody has cleared MIN_VOTES yet and group_stats
+    // returns {}. Render an empty card rather than throwing — this runs before
+    // the loading screen is hidden, so a throw here takes the whole page down.
+    const s     = summary[c.key] || {};
+    const dist  = s.label_dist   || [];   // counts indexed by tier id
+    const total = s.count        || 0;
+
+    const barSegs = !total ? "" : TIERS.map(t => {
+      const count = dist[t.id] || 0;
+      return `<div class="dist-bar-seg" title="${esc(t.name)}: ${count}" style="flex:${count};background:${tierColor(t.id)}"></div>`;
+    }).join("");
+
+    const rows = TIERS.map(t => {
+      const count = dist[t.id] || 0;
+      return `
+        <div class="dist-row">
+          <div class="dist-row-dot" style="background:${tierColor(t.id)}"></div>
+          <div class="dist-row-name">${esc(t.name)}</div>
+          <div class="dist-row-val">${count}</div>
+        </div>`;
+    }).join("");
+
+    return `
+    <div class="card ${c.cls}">
+      <div class="card-label">${c.label} <span class="card-count">${total} members</span></div>
+      <div class="dist-bar">${barSegs}</div>
+      <div class="dist-rows">${rows}</div>
+    </div>`;
+  }).join("");
+}
+
+function filteredMembers(ignoreLabel) {
+  const q      = document.getElementById("search").value.toLowerCase();
+  const chamber = document.getElementById("filter-chamber").value;
+  const party   = document.getElementById("filter-party").value;
+  const label   = document.getElementById("filter-label").value;
+  const leaders = document.getElementById("filter-leadership").value;
+
+  return allMembers.filter(m => {
+    if (q && !m.name.toLowerCase().includes(q) && !(m.state||"").toLowerCase().includes(q)) return false;
+    if (chamber && m.chamber !== chamber) return false;
+    if (party  && m.party   !== party)   return false;
+    if (leaders === "exclude" && m.leadership) return false;
+    if (leaders === "only"    && !m.leadership) return false;
+    if (label && !ignoreLabel && String(m.independence_tier) !== label) return false;
+    return true;
+  }).sort((a, b) => {
+    // Consensus deviation is not comparable across chambers: the Senate's bucket is
+    // a procedural residue about a third the size of the House's suspension calendar,
+    // so one Senate defection is worth ~3x a House one. Sorting on it groups by chamber
+    // first, which keeps the ranking meaningful inside each and never produces a
+    // combined leaderboard. See the note under the table.
+    if (sortCol === "consensus_deviation_pct" && a.chamber !== b.chamber)
+      return a.chamber.localeCompare(b.chamber);
+
+    let av = a[sortCol], bv = b[sortCol];
+    // sortDir 1 = ascending, for numbers and strings alike, so the arrow in
+    // updateSortHeaders is honest and nulls sort last in both directions
+    if (av == null) av = sortDir === 1 ? Infinity : -Infinity;
+    if (bv == null) bv = sortDir === 1 ? Infinity : -Infinity;
+    if (typeof av === "string") return sortDir * av.localeCompare(bv);
+    return sortDir * (av - bv);
+  });
+}
+
+// Bars are scaled to the largest bin, not to the total: the point is the shape of
+// the pile-up, and against 543 members every bin but one would otherwise be a stub.
+// The axis under them is also the scale legend — chip, range and name, once.
+function renderDistribution(rows) {
+  const scored = rows.filter(m => m.independence_tier != null);
+  const counts = TIERS.map(t => scored.filter(m => m.independence_tier === t.id).length);
+  const max = Math.max(...counts, 1);
+  const share = i => scored.length ? ` · ${(counts[i] / scored.length * 100).toFixed(0)}%` : "";
+
+  document.getElementById("hist-sub").textContent = scored.length
+    ? `${scored.length} scored members by independence score`
+    : "no scored members";
+
+  const grid = document.getElementById("hist-grid");
+  grid.innerHTML = TIERS.map((t, i) => `
+    <div class="hist-col">
+      <div class="hist-n">${counts[i]}${share(i)}</div>
+      <div class="hist-bar" style="height:${counts[i] / max * 100}%;min-height:${
+        counts[i] ? 2 : 0}px;background:${tierColor(t.id)}"></div>
+    </div>`).join("");
+  // The bars are divs; screen readers get the same numbers as a sentence.
+  grid.setAttribute("aria-label", scored.length
+    ? "Members by independence tier: " +
+      TIERS.map((t, i) => `${t.name} ${counts[i]}`).join(", ")
+    : "No scored members yet");
+
+  document.getElementById("hist-x").innerHTML = TIERS.map(t => `
+    <div><span class="hist-chip" style="background:${tierColor(t.id)}"></span
+      ><span class="hist-range">${esc(tierRange(t.id))}</span
+      ><span class="hist-name"><br>${esc(t.name)}</span></div>`).join("");
+}
+
+function renderTable() {
+  const rows = filteredMembers();
+  document.getElementById("count-pill").textContent = `${rows.length} members`;
+  // The distribution ignores the label filter — picking one bin would otherwise
+  // collapse the whole chart to that bin. Every other filter still applies.
+  renderDistribution(filteredMembers(true));
+
+  const tbody = document.getElementById("tbody");
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="9" class="no-results">${allMembers.length
+      ? "NO RESULTS"
+      : "NO MEMBERS SCORED YET &middot; TOO FEW VOTES RECORDED THIS CONGRESS"}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(m => {
+    const tier = m.independence_tier;   // null when a member has no partisan votes
+
+    return `<tr class="clickable" data-icpsr="${esc(m.icpsr)}">
+      <td class="td-name"><a href="#/member/${esc(m.icpsr)}">${esc(m.name)}</a>${
+        m.leadership ? `<span class="badge lead-badge">${esc(m.leadership)}</span>` : ""}</td>
+      <td><span class="party-pill party-${esc(m.party)}">${esc(m.party)}</span></td>
+      <td class="td-muted">${esc(m.state) || "—"}</td>
+      <td class="td-muted">${m.chamber}</td>
+      <td class="num"><span class="score-num" style="color:${tierColor(tier)}">${
+        pct(m.independence_score)}</span></td>
+      <td class="td-muted num">${pct(m.missed_pct)}</td>
+      <td><span class="badge"><i class="badge-dot" style="background:${
+        tierColor(tier)}"></i>${esc(tierName(tier))}</span></td>
+      <td class="td-muted num">${pct(m.consensus_deviation_pct)}${m.consensus_votes
+        ? ` <span class="denom">of ${m.consensus_votes}</span>` : ""}</td>
+      <td class="td-muted num">${m.partisan_votes ?? "—"}</td>
+    </tr>`;
+  }).join("");
+}
+
+function updateSortHeaders() {
+  // #main-table, not "thead th": the member detail table matches that too, it stays
+  // in the DOM after you navigate back, and it has no .sort-arrow to write to — the
+  // next header click threw and the table quietly stopped sorting.
+  document.querySelectorAll("#main-table thead th").forEach(th => {
+    const col = th.dataset.col;
+    th.classList.toggle("sorted", col === sortCol);
+    th.setAttribute("aria-sort", col !== sortCol ? "none"
+      : sortDir === -1 ? "descending" : "ascending");
+    const arrow = th.querySelector(".sort-arrow");
+    if (col === sortCol) arrow.textContent = sortDir === -1 ? "↓" : "↑";
+    else arrow.textContent = "↕";
+  });
+}
+
+async function renderDetail(icpsr) {
+  const el   = document.getElementById("detail-view");
+  const back = `<a class="back-link" href="#/">&larr; Back to all members</a>`;
+  const idx  = allMembers.find(m => String(m.icpsr) === icpsr);
+  const stale = () => location.hash !== `#/member/${icpsr}`;
+  el.innerHTML = back + `<div class="no-results">LOADING&hellip;</div>`;
+  window.scrollTo(0, 0);
+
+  let d;
+  try {
+    const res = await fetch(`members/${encodeURIComponent(icpsr)}.json`);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    d = await res.json();
+  } catch (err) {
+    console.error(err);
+    if (stale()) return;
+    el.innerHTML = back + `<div class="no-results">NO DETAIL DATA FOR ICPSR ${esc(icpsr)} (${esc(err.message)})</div>`;
+    return;
+  }
+  if (stale()) return;
+
+  const missed  = d.missed || {};
+  const unw     = idx && idx.party_unity_pct != null ? 100 - idx.party_unity_pct : null;
+  const dissents = d.dissents || [];
+  // the per-member file caps its list; dissent_count in the index is the true total
+  const total = idx && idx.dissent_count != null ? idx.dissent_count : dissents.length;
+
+  const rows = dissents.map(v => `<tr>
+      <td class="td-muted">${esc(v.date)}</td>
+      <td class="td-muted">${esc(v.bill_number) || "—"}</td>
+      <td class="td-desc">${esc(v.vote_question) || "—"}<div class="stat-note">${esc(v.vote_desc)}</div></td>
+      <td class="td-muted">${esc(v.kind)}</td>
+      <td class="td-muted">${esc(v.member_vote)} vs ${esc(v.party_position)}</td>
+      <td class="td-muted">${esc(v.vote_result) || "—"}</td>
+    </tr>`).join("");
+
+  el.innerHTML = back + `
+    <h2>${esc(d.name)}</h2>
+    <div class="detail-sub">${esc(d.party)} · ${esc(d.state)} · ${esc(d.chamber)}${
+      d.leadership ? " · " + esc(d.leadership) : ""} · ICPSR ${esc(d.icpsr)}</div>
+    <div class="detail-stats">
+      <div class="stat">
+        <div class="card-label">Missed Votes</div>
+        <div class="stat-val">${missed.pct == null ? "—" : pct(missed.pct)}</div>
+        <div class="stat-note">${missed.missed ?? "—"} of ${missed.eligible ?? "—"} eligible</div>
+      </div>
+      <div class="stat">
+        <div class="card-label">Independence Score</div>
+        <div class="stat-val" style="color:${tierColor(idx && idx.independence_tier)}">${
+          pct(idx && idx.independence_score)}</div>
+        <div class="stat-note"><span class="badge"><i class="badge-dot" style="background:${
+          tierColor(idx && idx.independence_tier)}"></i>${esc(tierName(idx && idx.independence_tier))
+          }</span> cohesion-weighted partisan deviation</div>
+      </div>
+      <div class="stat">
+        <div class="card-label">Partisan Dev. (unweighted)</div>
+        <div class="stat-val">${pct(unw)}</div>
+        <div class="stat-note">100% &minus; party unity</div>
+      </div>
+      <div class="stat">
+        <div class="card-label">Consensus Dev.</div>
+        <div class="stat-val">${pct(idx && idx.consensus_deviation_pct)}</div>
+        <div class="stat-note">of ${idx && idx.consensus_votes || "—"} bipartisan votes · not in the score</div>
+      </div>
+      <div class="stat">
+        <div class="card-label">Dissenting Votes</div>
+        <div class="stat-val">${total}</div>
+        <div class="stat-note">${total > dissents.length ? `showing ${dissents.length} most recent` : "most recent first"}</div>
+      </div>
+    </div>
+    ${dissents.length ? `<table>
+      <thead><tr>
+        <th scope="col">Date</th><th scope="col">Bill</th><th scope="col">Question</th><th scope="col">Kind</th><th scope="col">Vote vs Party</th><th scope="col">Result</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>` : `<div class="no-results">NO DISSENTING VOTES</div>`}`;
+}
+
+function route() {
+  const m = location.hash.match(/^#\/member\/(\d+)$/);
+  document.getElementById("main-view").style.display   = m ? "none" : "block";
+  document.getElementById("detail-view").style.display = m ? "block" : "none";
+  if (m) renderDetail(m[1]);
+}
+
+// ── Caucus drift over time ────────────────────────────────────────────────────
+// Small multiples, two series each, rather than one four-series chart: party is
+// the hue, chamber is the panel. Per-member sparklines were measured and
+// rejected — the median member moves 0.02 points week over week, and the only
+// large movers are new arrivals thrashing on a small denominator. The signal is
+// at caucus level, which is all the trimmed snapshots carry.
+// The chart is honest only when the archive covers the term from its start. A
+// cumulative average that had already converged before archiving began is a flat
+// line by construction — that was the whole reason not to plot the 119th. So the
+// gate is coverage, not a Congress number: it switches itself on for the 121st
+// and every one after, and stays off for any term we only caught the tail of.
+const SERIES_KEYS = ["house_dem", "house_rep", "senate_dem", "senate_rep"];
+const TREND_MIN_POINTS   = 3;   // two points is a segment, not a trend
+const TREND_START_DAYS   = 90;  // the 30th rollcall lands ~day 32; this is margin
+const TREND_MAX_GAP_DAYS = 45;  // a longer silence isn't a complete record
+const DAY_MS = 86400000;
+
+// A Congress convenes January 3 of its odd year; the 1st in 1789.
+const congressConvened = n => Date.UTC(1789 + 2 * (n - 1), 0, 3);
+
+/** Dates covering `congress` from its start with no long gap, else null. */
+// Snapshot dates are exactly YYYY-MM-DD or the archive is not ours to plot. This
+// is a shape check, not a parse: Date.parse is lenient enough to accept "Jan 1 2026
+// (<img src=x onerror=…>)" — it treats the parens as a comment — and those strings
+// reach innerHTML and attribute values downstream.
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function completeCoverage(dates, congress) {
+  if (dates.length < TREND_MIN_POINTS) return null;
+  if (!dates.every(d => ISO_DATE.test(d))) return null;
+  const t = dates.map(d => Date.parse(d + "T00:00:00Z")).sort((a, b) => a - b);
+  // Every comparison against NaN is false, so one unparseable date walks straight
+  // through both gates below and plots NaN coordinates. Refuse the archive instead.
+  if (t.some(ms => !Number.isFinite(ms))) return null;
+  if ((t[0] - congressConvened(congress)) / DAY_MS > TREND_START_DAYS) return null;
+  for (let i = 1; i < t.length; i++)
+    if ((t[i] - t[i - 1]) / DAY_MS > TREND_MAX_GAP_DAYS) return null;
+  return dates;
+}
+
+async function renderTrend(congress) {
+  let index;
+  try {
+    index = await (await fetch("history/index.json")).json();
+  } catch { return; }             // no archive yet — section stays hidden
+
+  const dates = index.filter(e => e.congress === congress).map(e => e.date).sort();
+  if (dates.length < TREND_MIN_POINTS) return;
+
+  const snaps = (await Promise.all(dates.map(d =>
+    fetch(`history/${d}.json`).then(r => r.json()).catch(() => null)
+  ))).filter(Boolean);
+
+  // Coverage is judged on snapshots that actually scored somebody: the first
+  // weeks of a term archive fine but hold no values, and a run that failed
+  // leaves no snapshot at all.
+  const scored = snaps
+    .filter(s => SERIES_KEYS.some(k => typeof (s.summary?.[k] || {}).avg_independence === "number"))
+    .map(s => s.date);
+  if (!completeCoverage(scored, congress)) return;
+
+  const panels = [
+    { title: "House",  d: "house_dem",  r: "house_rep"  },
+    { title: "Senate", d: "senate_dem", r: "senate_rep" },
+  ].map(p => trendPanel(p, snaps)).filter(Boolean);
+  if (!panels.length) return;
+
+  // Count plotted points, not snapshots fetched: the first weeks of a Congress
+  // archive fine but score nobody, and those snapshots carry no series values.
+  const plotted = new Set(SERIES_KEYS.flatMap(k => seriesPoints(snaps, k).map(p => p.date))).size;
+
+  document.getElementById("trend-grid").innerHTML = panels.join("");
+  document.getElementById("trend-sub").textContent =
+    `Average independence score by caucus · ${plotted} weekly snapshots`;
+  document.getElementById("trend").dataset.state = "ready";
+  wireTrendHover();
+}
+
+// A snapshot taken before anyone cleared MIN_VOTES has {} for every group, so
+// every point is optional. A series needs two real points to be a line at all.
+function seriesPoints(snaps, key) {
+  return snaps
+    .map(s => ({ date: s.date, v: (s.summary?.[key] || {}).avg_independence }))
+    .filter(p => typeof p.v === "number");
+}
+
+function trendPanel({ title, d, r }, snaps) {
+  const dem = seriesPoints(snaps, d), rep = seriesPoints(snaps, r);
+  if (dem.length < 2 && rep.length < 2) return null;
+
+  const W = 360, H = 170, P = { t: 12, r: 46, b: 24, l: 32 };
+  const all  = [...dem, ...rep];
+  const tOf  = p => Date.parse(p.date);
+  const t0   = Math.min(...all.map(tOf)), t1 = Math.max(...all.map(tOf));
+  const ymax = Math.max(1, Math.ceil(Math.max(...all.map(p => p.v)) * 1.15));
+  // Zero baseline: these are percentages where 0 is meaningful, and the caucuses
+  // differ enough that suppressing it would invent drama out of half a point.
+  const x = p => P.l + (t1 === t0 ? 0 : (tOf(p) - t0) / (t1 - t0)) * (W - P.l - P.r);
+  const y = v => H - P.b - (v / ymax) * (H - P.t - P.b);
+
+  const ticks = [0, ymax / 2, ymax].map(v => `
+    <line class="gridline" x1="${P.l}" y1="${y(v).toFixed(1)}" x2="${W - P.r}" y2="${y(v).toFixed(1)}"/>
+    <text class="axis-lbl" x="${P.l - 6}" y="${(y(v) + 3).toFixed(1)}" text-anchor="end">${v % 1 ? v.toFixed(1) : v}</text>`
+  ).join("");
+
+  // Direct labels ride the line ends. When the two caucus averages converge the
+  // labels would overlap, so nudge them apart — the dots stay on the real value.
+  const endY = pts => pts.length >= 2 ? y(pts[pts.length - 1].v) : null;
+  const [yd, yr] = [endY(dem), endY(rep)];
+  let [offD, offR] = [0, 0];
+  if (yd !== null && yr !== null && Math.abs(yd - yr) < 11) {
+    const push = (11 - Math.abs(yd - yr)) / 2;
+    [offD, offR] = yd <= yr ? [-push, push] : [push, -push];
+  }
+
+  const line = (pts, color, off) => {
+    if (pts.length < 2) return "";
+    const path = pts.map((p, i) => `${i ? "L" : "M"}${x(p).toFixed(1)},${y(p.v).toFixed(1)}`).join("");
+    const last = pts[pts.length - 1];
+    return `<path class="series" d="${path}" stroke="${color}"/>
+      <circle class="end-dot" cx="${x(last).toFixed(1)}" cy="${y(last.v).toFixed(1)}" r="4" fill="${color}"/>
+      <text class="end-lbl" x="${(x(last) + 9).toFixed(1)}" y="${(y(last.v) + 3.5 + off).toFixed(1)}">${last.v.toFixed(1)}</text>`;
+  };
+
+  const fmt = s => new Date(s + "T00:00:00Z").toLocaleDateString("en-US",
+    { month: "short", day: "numeric", timeZone: "UTC" });
+  const xLabels = [snaps[0], snaps[snaps.length - 1]].map((s, i) => `
+    <text class="axis-lbl" x="${i ? W - P.r : P.l}" y="${H - P.b + 14}"
+          text-anchor="${i ? "end" : "start"}">${fmt(s.date)}</text>`).join("");
+
+  return `<div class="trend-panel">
+    <h4>${title}</h4>
+    <svg viewBox="0 0 ${W} ${H}" role="img"
+         aria-label="${title} average independence score by caucus over time"
+         data-dem="${esc(JSON.stringify(dem))}" data-rep="${esc(JSON.stringify(rep))}"
+         data-geom="${esc(JSON.stringify({ W, H, P, t0, t1, ymax }))}">
+      ${ticks}${xLabels}
+      <line class="crosshair" y1="${P.t}" y2="${H - P.b}"/>
+      ${line(dem, "var(--dem-line)", offD)}${line(rep, "var(--rep-line)", offR)}
+      <rect class="hit" x="${P.l}" y="${P.t}" width="${W - P.l - P.r}" height="${H - P.t - P.b}"/>
+    </svg>
+  </div>`;
+}
+
+function wireTrendHover() {
+  const tip = document.getElementById("trend-tip");
+  document.querySelectorAll(".trend-panel svg").forEach(svg => {
+    const dem = JSON.parse(svg.dataset.dem), rep = JSON.parse(svg.dataset.rep);
+    const { W, P, t0, t1 } = JSON.parse(svg.dataset.geom);
+    const hair = svg.querySelector(".crosshair");
+    const at = p => P.l + (t1 === t0 ? 0 : (Date.parse(p.date) - t0) / (t1 - t0)) * (W - P.l - P.r);
+    const dates = [...new Set([...dem, ...rep].map(p => p.date))].sort();
+
+    svg.querySelector(".hit").addEventListener("mousemove", e => {
+      const box = svg.getBoundingClientRect();
+      const sx  = (e.clientX - box.left) / box.width * W;     // viewBox units
+      const near = dates.reduce((a, b) =>
+        Math.abs(at({ date: b }) - sx) < Math.abs(at({ date: a }) - sx) ? b : a);
+      hair.setAttribute("x1", at({ date: near }));
+      hair.setAttribute("x2", at({ date: near }));
+      hair.style.opacity = ".4";
+
+      const row = (pts, color, name) => {
+        const p = pts.find(q => q.date === near);
+        return p ? `<div class="tip-row"><span><i style="background:${color}"></i> ${name}</span>
+                    <span>${p.v.toFixed(2)}</span></div>` : "";
+      };
+      tip.innerHTML = `<div class="tip-date">${esc(near)}</div>
+        ${row(dem, "var(--dem-line)", "Dem")}${row(rep, "var(--rep-line)", "Rep")}`;
+      tip.style.left    = Math.min(e.clientX + 14, innerWidth - 150) + "px";
+      tip.style.top     = (e.clientY - 12) + "px";
+      tip.style.opacity = "1";
+    });
+
+    svg.querySelector(".hit").addEventListener("mouseleave", () => {
+      hair.style.opacity = "0";
+      tip.style.opacity  = "0";
+    });
+  });
+}
+
+async function init() {
+  const res  = await fetch("data.json");
+  const data = await res.json();
+
+  allMembers = data.members;
+  TIERS = data.tiers;
+
+  // Options come from the tier table for the same reason the legend does: one
+  // rename in analyze_votes.py, and nothing here needs touching.
+  document.getElementById("filter-label").insertAdjacentHTML("beforeend", tierOptions());
+
+  // Short-lived by design: it stops appearing on its own, so nobody has to
+  // remember to take it down. Bump both constants for the next change.
+  const CHANGED_ON = "2026-09-07", BANNER_UNTIL = "2026-10-05";
+  try {
+    if (new Date().toISOString().slice(0, 10) < BANNER_UNTIL &&
+        localStorage.getItem("seen-changes") !== CHANGED_ON) {
+      const banner = document.getElementById("banner");
+      banner.hidden = false;
+      document.getElementById("banner-x").addEventListener("click", () => {
+        banner.hidden = true;
+        try { localStorage.setItem("seen-changes", CHANGED_ON); } catch { /* private mode */ }
+      });
+    }
+  } catch { /* localStorage can throw on access alone */ }
+
+  document.getElementById("eyebrow").textContent =
+    `${data.congress}th Congress · Updated weekly`;
+  const scored = allMembers.filter(m => m.independence_score != null).length;
+  document.getElementById("updated-at").textContent =
+    `${scored} of ${allMembers.length} members scored · Last updated: ` +
+    new Date(data.updated_at).toLocaleDateString("en-US", {
+      year: "numeric", month: "long", day: "numeric"
+    });
+
+  renderSummaryCards(data.summary);
+  renderTable();
+  // Never let the trend block the page: it fetches the history archive, which
+  // may not exist yet, and it is the one section that is allowed to be absent.
+  renderTrend(data.congress).catch(err => console.warn("trend skipped:", err));
+  route();
+  window.addEventListener("hashchange", route);
+
+  document.getElementById("tbody").addEventListener("click", e => {
+    const tr = e.target.closest("tr[data-icpsr]");
+    if (tr) location.hash = `#/member/${tr.dataset.icpsr}`;
+  });
+
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("app").style.display     = "block";
+
+  // Controls
+  ["search","filter-chamber","filter-party","filter-label","filter-leadership"].forEach(id =>
+    document.getElementById(id).addEventListener("input", renderTable)
+  );
+
+  // Sort
+  document.querySelectorAll("#main-table thead th[data-col]").forEach(th => {
+    const sort = () => {
+      const col = th.dataset.col;
+      if (col === sortCol) sortDir *= -1;
+      else { sortCol = col; sortDir = col === "name" || col === "state" || col === "chamber" ? 1 : -1; }
+      updateSortHeaders();
+      renderTable();
+    };
+    th.tabIndex = 0;
+    th.addEventListener("click", sort);
+    th.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); sort(); }
+    });
+  });
+  updateSortHeaders();   // stamp aria-sort on the initial column
+}
+
+init().catch(err => {
+  document.getElementById("loading").innerHTML =
+    `<div style="color:var(--rep);font-family:'DM Mono',monospace;font-size:.8rem">Failed to load data.json</div>`;
+  console.error(err);
+});
+</script>
+</body>
+</html>

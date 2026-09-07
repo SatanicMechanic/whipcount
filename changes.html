@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What changed &middot; Mavericks &amp; Sycophants</title>
+<meta name="description" content="What changed in the Congressional Independence Index on 7 September 2026, and why.">
+<meta name="theme-color" content="#0c0c0f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%97%B3%3C/text%3E%3C/svg%3E">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<style>
+  /* Standalone on purpose: a temporary explainer should not make the main page's
+     stylesheet a shared asset. Same tokens and the same two self-hosted faces,
+     nothing else. script-src is 'none' — this page has no behaviour. */
+  :root {
+    --bg: #0c0c0f; --surface: #13131a; --border: #1e1e2e;
+    --text: #e2e2e8; --muted: #8a8aa0; --accent: #f0c040;
+  }
+  @font-face {
+    font-family: 'DM Sans'; font-style: normal; font-weight: 400; font-display: swap;
+    src: url(fonts/dm-sans-400-latin.woff2) format('woff2');
+  }
+  @font-face {
+    font-family: 'DM Sans'; font-style: normal; font-weight: 500; font-display: swap;
+    src: url(fonts/dm-sans-400-latin.woff2) format('woff2');
+  }
+  @font-face {
+    font-family: 'DM Mono'; font-style: normal; font-weight: 400; font-display: swap;
+    src: url(fonts/dm-mono-400-latin.woff2) format('woff2');
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-weight: 400;
+    line-height: 1.7; padding: 3rem 2rem 5rem;
+  }
+  main { max-width: 720px; margin: 0 auto; }
+  .eyebrow {
+    font-family: 'DM Mono', monospace; font-size: .7rem; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: .6rem;
+  }
+  h1 { font-size: 1.9rem; line-height: 1.2; letter-spacing: -.01em; margin-bottom: .9rem; }
+  .lede { color: #b0b0c0; margin-bottom: 2.5rem; }
+  h2 {
+    font-size: 1rem; margin: 2.25rem 0 .6rem;
+    padding-top: 1.5rem; border-top: 1px solid var(--border);
+  }
+  p { color: #b0b0c0; margin-bottom: .85rem; }
+  a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  code {
+    font-family: 'DM Mono', monospace; font-size: .85em;
+    background: var(--surface); padding: .1rem .35rem; border-radius: 3px;
+  }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0 .5rem; font-size: .85rem; }
+  th, td { text-align: left; padding: .45rem .8rem .45rem 0; border-bottom: 1px solid var(--border); }
+  th { font-family: 'DM Mono', monospace; font-size: .62rem; letter-spacing: .12em;
+       text-transform: uppercase; color: var(--muted); font-weight: 400; }
+  td.num { font-family: 'DM Mono', monospace; color: var(--muted); white-space: nowrap; }
+  .back { display: inline-block; margin-top: 3rem; font-family: 'DM Mono', monospace; font-size: .75rem; }
+  @media (max-width: 700px) { body { padding: 2rem 1rem 4rem; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">7 September 2026</div>
+  <h1>What changed</h1>
+  <p class="lede">If you have used this site before, the numbers moved this week. Most
+  members are in a different band than they were, and almost nobody's score went up.
+  That is a change in how the score is calculated, not a change in how anyone voted.</p>
+
+  <h2>The score measures one thing now, not two</h2>
+  <p>The Independence Score used to be the average of two numbers: how often a member
+  broke with their own party on contested votes, and how often they broke with
+  bipartisan consensus. Those two do not share a scale. Consensus deviation runs about
+  six times larger — a median of 3.5% against 0.6% — so the average tracked consensus
+  deviation almost exactly and said very little about party discipline, which is the
+  thing this site is about.</p>
+  <p>The score is now cohesion-weighted partisan deviation alone: how often a member
+  votes against their own party's majority, weighted by how united that party was on
+  each vote. Consensus deviation has not gone away — it sits in its own column, beside
+  the score instead of inside it.</p>
+  <p>The practical effect is that the typical score fell by roughly three quarters.</p>
+  <table>
+    <thead><tr><th>&nbsp;</th><th>Before</th><th>After</th></tr></thead>
+    <tbody>
+      <tr><td>Median member</td><td class="num">2.71%</td><td class="num">0.59%</td></tr>
+      <tr><td>Most independent member</td><td class="num">34.0%</td><td class="num">29.9%</td></tr>
+    </tbody>
+  </table>
+
+  <h2>The bands were rescaled, and most labels are new</h2>
+  <p>The old cut points were set for the blended score. Against the new one they left
+  about 90% of Congress in the bottom two bands, which is not a scale so much as a
+  pile. The new cuts were checked against the 117th, 118th and 119th Congresses so that
+  every band is occupied in each of them and the top band stays genuinely rare.</p>
+  <table>
+    <thead><tr><th>Score</th><th>Label</th><th>Members</th></tr></thead>
+    <tbody>
+      <tr><td class="num">under 0.5%</td><td>Mindless Drone</td><td class="num">244</td></tr>
+      <tr><td class="num">0.5 – 1.5%</td><td>Bobblehead</td><td class="num">156</td></tr>
+      <tr><td class="num">1.5 – 4%</td><td>Squeaky Wheel</td><td class="num">86</td></tr>
+      <tr><td class="num">4 – 8%</td><td>Free Agent</td><td class="num">39</td></tr>
+      <tr><td class="num">8 – 20%</td><td>Heretic</td><td class="num">13</td></tr>
+      <tr><td class="num">20% and up</td><td>Lone Wolf</td><td class="num">5</td></tr>
+    </tbody>
+  </table>
+  <p><strong>76% of members carry a different label than they did last week.</strong>
+  Almost all of that is the two changes above, not new voting.</p>
+
+  <h2>Consensus deviation shows its denominator</h2>
+  <p>The two chambers do not hold comparable numbers of bipartisan votes — the House's
+  are mostly suspension-of-the-rules bills and it holds roughly three times as many as
+  the Senate, whose bipartisan votes are mostly procedural. One Senate defection
+  therefore moves that rate about three times as far. The column now reads
+  <code>62% of 67</code> rather than <code>62%</code>, and sorting it groups the
+  chambers instead of ranking them against each other.</p>
+
+  <h2>Two columns are gone</h2>
+  <p><em>Party Unity</em> and <em>Consensus Votes</em> have been removed from the table.
+  Party unity is unchanged and still published in <code>data.json</code> as
+  <code>party_unity_pct</code>, and each member's page still carries it. The consensus
+  denominator now travels beside its own rate, so a separate column for it was showing
+  the same number twice.</p>
+
+  <h2>The page is laid out differently</h2>
+  <p>The table and its filters are at the top now, and the explanations are underneath
+  it rather than above. There is a new chart showing where everyone lands on the scale.
+  The heap at the left-hand end of it is not a rendering fault: most of Congress almost
+  never breaks ranks, and that is the point the chart exists to make.</p>
+
+  <h2>If you read the data files</h2>
+  <p><code>data.json</code> now carries a <code>tiers</code> table and each member has an
+  <code>independence_tier</code> id in place of <code>independence_label</code>. Four
+  fields nothing consumed were dropped: <code>independence_label</code>,
+  <code>weighted_partisan_deviation_pct</code> (identical to the score),
+  <code>consensus_loyalty_pct</code> (the inverse of consensus deviation) and
+  <code>district</code>.</p>
+
+  <a class="back" href="./">&larr; Back to the index</a>
+</main>
+</body>
+</html>
