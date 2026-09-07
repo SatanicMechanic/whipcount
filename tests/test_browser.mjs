@@ -319,7 +319,13 @@ cdp.close();
 chrome.kill();
 await new Promise(r => chrome.on("exit", r));   // it is still writing its profile
 server.close();
-fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+try {
+  fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+} catch (err) {
+  // Chrome's crashpad handler can still hold profile files open past the exit
+  // event; cleanup is best-effort and shouldn't fail a run whose checks passed.
+  console.warn(`cleanup: ${err.message}`);
+}
 if (guard) clearTimeout(guard);
 
 console.log(failures ? `\n${failures} failure(s)` : "\nall good");
