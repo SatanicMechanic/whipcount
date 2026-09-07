@@ -155,6 +155,7 @@
     background: rgba(240,192,64,.1);
     border-bottom: 1px solid rgba(240,192,64,.25);
   }
+  .banner[hidden] { display: none; }
   .banner a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
   .banner-x {
     margin-left: auto; flex-shrink: 0;
@@ -415,6 +416,15 @@
   .trend-panel .end-lbl   { fill: var(--text); font-size: 10px; font-family: 'DM Mono', monospace; }
   .trend-panel .hit       { fill: transparent; cursor: crosshair; }
   .trend-panel .crosshair { stroke: var(--muted); stroke-width: 1; opacity: 0; }
+  .trend-table {
+    margin-top: .75rem;
+    font-size: .7rem;
+    color: var(--muted);
+  }
+  .trend-table summary { cursor: pointer; }
+  .trend-table table { margin-top: .5rem; font-size: .72rem; }
+  .trend-table th, .trend-table td { padding: .3rem .6rem; text-align: right; }
+  .trend-table th:first-child, .trend-table td:first-child { text-align: left; }
   .trend-tip {
     position: fixed;
     pointer-events: none;
@@ -516,8 +526,11 @@
   /* No overflow on the wrapper at desktop widths, deliberately: any scroll
      container here becomes the sticky thead's scrollport, so the header would
      stick to a box that never scrolls instead of to the viewport. Below the
-     breakpoint the table genuinely needs to scroll sideways and gives that up. */
-  @media (max-width: 1100px) {
+     breakpoint the table genuinely needs to scroll sideways and gives that up.
+     1300px, not 1100px: measured against the real 543-member table, the row's
+     min-content width is ~1236px (nowrap cells) — 1100px clipped the rightmost
+     column with nowhere to scroll to reach it. */
+  @media (max-width: 1300px) {
     .table-wrap { overflow-x: auto; }
     thead th { position: static; }
   }
@@ -816,6 +829,10 @@
   .stat-note { font-size: .7rem; color: var(--muted); margin-top: .35rem; }
 
   .detail table { margin-top: .5rem; }
+  /* Scroll surface only. Deliberately not .table-wrap: that class also carries a
+     2rem gutter and a 4rem bottom margin, which nest inside .detail's own and
+     push the table out of line with the heading and stat cards above it. */
+  .detail-table-wrap { overflow-x: auto; }
   .detail td { white-space: normal; }
   .detail .td-desc { color: #b0b0c0; max-width: 460px; }
 
@@ -1291,12 +1308,12 @@ async function renderDetail(icpsr) {
         <div class="stat-note">${total > dissents.length ? `showing ${dissents.length} most recent` : "most recent first"}</div>
       </div>
     </div>
-    ${dissents.length ? `<table>
+    ${dissents.length ? `<div class="detail-table-wrap"><table>
       <thead><tr>
         <th scope="col">Date</th><th scope="col">Bill</th><th scope="col">Question</th><th scope="col">Kind</th><th scope="col">Vote vs Party</th><th scope="col">Result</th>
       </tr></thead>
       <tbody>${rows}</tbody>
-    </table>` : `<div class="no-results">NO DISSENTING VOTES</div>`}`;
+    </table></div>` : `<div class="no-results">NO DISSENTING VOTES</div>`}`;
 }
 
 function route() {
@@ -1304,6 +1321,14 @@ function route() {
   document.getElementById("main-view").style.display   = m ? "none" : "block";
   document.getElementById("detail-view").style.display = m ? "block" : "none";
   if (m) renderDetail(m[1]);
+  // A plain fragment link (e.g. #about) navigated while main-view was hidden:
+  // the browser's own fragment scroll found nothing, so redo it now that the
+  // target view is visible. location.hash is URL-bar-controlled and not
+  // necessarily a valid selector, so guard the lookup.
+  else if (location.hash && location.hash !== "#") {
+    try { document.querySelector(location.hash)?.scrollIntoView(); }
+    catch { /* not a valid selector */ }
+  }
 }
 
 // ── Caucus drift over time ────────────────────────────────────────────────────
@@ -1430,11 +1455,13 @@ function trendPanel({ title, d, r }, snaps) {
       <text class="end-lbl" x="${(x(last) + 9).toFixed(1)}" y="${(y(last.v) + 3.5 + off).toFixed(1)}">${last.v.toFixed(1)}</text>`;
   };
 
-  const fmt = s => new Date(s + "T00:00:00Z").toLocaleDateString("en-US",
+  // Label the same domain used for positioning (t0/t1 from scored points),
+  // not the raw snapshot list, which can include unscored dates at either end.
+  const fmtMs = ms => new Date(ms).toLocaleDateString("en-US",
     { month: "short", day: "numeric", timeZone: "UTC" });
-  const xLabels = [snaps[0], snaps[snaps.length - 1]].map((s, i) => `
+  const xLabels = [t0, t1].map((ms, i) => `
     <text class="axis-lbl" x="${i ? W - P.r : P.l}" y="${H - P.b + 14}"
-          text-anchor="${i ? "end" : "start"}">${fmt(s.date)}</text>`).join("");
+          text-anchor="${i ? "end" : "start"}">${fmtMs(ms)}</text>`).join("");
 
   return `<div class="trend-panel">
     <h4>${title}</h4>
@@ -1447,7 +1474,28 @@ function trendPanel({ title, d, r }, snaps) {
       ${line(dem, "var(--dem-line)", offD)}${line(rep, "var(--rep-line)", offR)}
       <rect class="hit" x="${P.l}" y="${P.t}" width="${W - P.l - P.r}" height="${H - P.t - P.b}"/>
     </svg>
+    ${trendTable(dem, rep)}
   </div>`;
+}
+
+// The chart's only way to read an intermediate point is a mousemove tooltip —
+// no keyboard path, nothing in the accessibility tree between the endpoints. A
+// plain table is a simpler nonvisual alternative than a keyboard chart
+// controller, and it's free: the dated values are already computed above.
+function trendTable(dem, rep) {
+  const dates = [...new Set([...dem, ...rep].map(p => p.date))].sort();
+  const valAt = (pts, date) => pts.find(p => p.date === date)?.v;
+  const fmtCell = v => v == null ? "—" : v.toFixed(2);
+  const rows = dates.map(date => `
+    <tr><td>${esc(date)}</td><td>${fmtCell(valAt(dem, date))}</td><td>${fmtCell(valAt(rep, date))}</td></tr>`
+  ).join("");
+  return `<details class="trend-table">
+    <summary>Show values as a table</summary>
+    <table>
+      <thead><tr><th scope="col">Date</th><th scope="col">Democratic</th><th scope="col">Republican</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </details>`;
 }
 
 function wireTrendHover() {
@@ -1531,6 +1579,7 @@ async function init() {
   window.addEventListener("hashchange", route);
 
   document.getElementById("tbody").addEventListener("click", e => {
+    if (e.target.closest("a")) return;   // let the anchor do its own thing
     const tr = e.target.closest("tr[data-icpsr]");
     if (tr) location.hash = `#/member/${tr.dataset.icpsr}`;
   });

@@ -259,16 +259,25 @@ check("every row carries a tier dot", view.rows > 0 && view.badges === view.rows
 check("header is sticky at desktop width", view.sticky === "sticky", view.sticky);
 check("trend shows its ghost, not a chart", view.ghost && view.trend !== "ready");
 check("the explainer link points at something that exists", view.jump);
-// A fresh profile has no dismissal stored and the retire date has not passed, so
-// a first-time visitor must see it.
-check("change banner shown to a first-time visitor", view.banner);
-check("banner links to the changes page", view.blink === "changes.html", view.blink);
+// A fresh profile has no dismissal stored, so a first-time visitor sees the
+// banner as long as it hasn't retired — this constant must track BANNER_UNTIL
+// in index.html; both assertions die together when the banner is removed.
+const bannerLive = new Date().toISOString().slice(0, 10) < "2026-10-05";
+if (bannerLive) {
+  check("change banner shown to a first-time visitor", view.banner);
+  check("banner links to the changes page", view.blink === "changes.html", view.blink);
 
-await evaluate(`document.getElementById("banner-x").click()`);
-check("dismissing the banner hides it",
-  await evaluate(`document.getElementById("banner").hidden === true`));
-check("dismissal is remembered",
-  await evaluate(`localStorage.getItem("seen-changes")`) !== null);
+  await evaluate(`document.getElementById("banner-x").click()`);
+  check("dismissing the banner hides it",
+    await evaluate(`getComputedStyle(document.getElementById("banner")).display`) === "none");
+  check("dismissal is remembered",
+    await evaluate(`localStorage.getItem("seen-changes")`) !== null);
+} else {
+  // Past the retire date the banner must be gone on its own, with no stored
+  // dismissal. Without this the suite would simply stop testing the banner
+  // after retirement and never notice it failing to retire.
+  check("retired banner is not shown", view.banner === false);
+}
 check("page does not scroll sideways", view.hpad);
 
 // ── The member route ─────────────────────────────────────────────────────────
