@@ -193,12 +193,14 @@ document.querySelectorAll = () => [];
 // ── 1e. No third-party origins ───────────────────────────────────────────────
 // The CSP is meta-only (GitHub Pages sets no headers), so it is the whole defence
 // and it says 'self'. A resource pointing anywhere else is dead on arrival — the
-// page would silently lose its fonts rather than fall back to them.
+// page would silently lose its fonts rather than fall back to them. GoatCounter
+// is the one deliberate exception, allowlisted in the CSP itself.
 console.log("\nThird-party resources");
 const external = [...html.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)]
   .map(m => m[1])
-  .filter(u => !/^https:\/\/voteview\.com/.test(u));   // the data credit in the footer, an <a>
-check("no third-party resources loaded", external.length === 0, external.join(" "));
+  .filter(u => !/^https:\/\/voteview\.com/.test(u))   // the data credit in the footer, an <a>
+  .filter(u => !/^https:\/\/gc\.zgo\.at\//.test(u));  // GoatCounter's counter script
+check("no unexpected third-party resources loaded", external.length === 0, external.join(" "));
 check("CSP declared", /http-equiv="Content-Security-Policy"/.test(html));
 check("fonts are served from this repo",
   (html.match(/src: url\(fonts\/[^)]+\.woff2\)/g) || []).length >= 4);

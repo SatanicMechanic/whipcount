@@ -18,8 +18,10 @@
      <style>, one inline <script>, and generated style="" attributes throughout.
      default-src 'self' rather than 'none' so a same-origin resource nobody
      remembered still loads; the point of the policy is that no third-party
-     origin can execute here, and that holds either way. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+     origin can execute here, and that holds either way — except GoatCounter,
+     the one deliberate exception: gc.zgo.at serves the counter script and
+     whipcount.goatcounter.com receives the pageview beacon. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://gc.zgo.at; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://whipcount.goatcounter.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <style>
   /* Fonts are served from this repo, not fonts.gstatic.com. Google's CSS is
      UA-dependent, so SRI on it is not viable, and a stylesheet from a third party
@@ -1565,5 +1567,6 @@ init().catch(err => {
   console.error(err);
 });
 </script>
+<script data-goatcounter="https://whipcount.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>
