@@ -123,7 +123,8 @@ def check_congress_rollover(data_dir, out_dir):
     into the repo.
     """
     os.environ.update(VOTES_OFFLINE="1", VOTES_CONGRESS="119",
-                      VOTES_DATA_DIR=str(data_dir), VOTES_OUT_DIR=str(out_dir))
+                      VOTES_DATA_DIR=str(data_dir), VOTES_OUT_DIR=str(out_dir),
+                      VOTES_SCHEMA_REPORT=str(out_dir / "schema-drift.txt"))
     sys.dont_write_bytecode = True   # don't leave a __pycache__ entry behind
     sys.path.insert(0, str(ROOT))
     from importlib import import_module
@@ -367,6 +368,85 @@ def check_chamber_switcher(tmp):
     assert sw["missed_pct"] == 0.0
 
 
+def check_tied_caucus_consensus(tmp):
+    """A caucus split exactly 50/50 has no majority — it must never make a roll
+    "consensus" just because the tie-break happens to land on the same side as
+    the other caucus's real majority. Otherwise every dissenter from the tied
+    side is charged a full-weight consensus deviation against a majority that
+    doesn't exist (Senate rollcall 498 of the 119th, real data).
+
+    Isolated Senate-only fixture, empty House: 2 Democrats tied every roll (one
+    Yea, one Nay -> tie-break picks Yea, weight 0.0), 2 Republicans unanimous
+    Yea (weight 1.0). Old code: D_pos == R_pos == Yea -> "consensus", so the
+    dissenting Democrat's Nay is a consensus deviation and neither Republican
+    ever accrues a partisan vote, so senate_rep's group score is unscored (the
+    C8 case). Fixed code: the tie keeps the roll "partisan" at D's own zero
+    weight, so the dissenter's vote is a zero-weight partisan defection instead,
+    and the Republicans — genuinely unanimous — now get a real 0% score.
+    """
+    d = tmp / "tied"; d.mkdir()
+    with open(d / "H119_members.csv", "w") as f:
+        f.write("congress,chamber,icpsr,district_code,state_abbrev,party_code,bioname\n")
+    with open(d / "H119_rollcalls.csv", "w") as f:
+        f.write("congress,chamber,rollnumber,date,bill_number,vote_result,vote_desc,vote_question\n")
+    with open(d / "H119_votes.csv", "w") as f:
+        f.write("congress,chamber,rollnumber,icpsr,cast_code\n")
+
+    D1, D2, R1, R2 = 501, 502, 503, 504
+    with open(d / "S119_members.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["congress", "chamber", "icpsr", "district_code", "state_abbrev",
+                    "party_code", "bioname"])
+        for i, party in ((D1, 100), (D2, 100), (R1, 200), (R2, 200)):
+            w.writerow([119, "Senate", i, 0, "NY", party, f"SENATOR{i}, No{i}"])
+    with open(d / "S119_rollcalls.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["congress", "chamber", "rollnumber", "date", "bill_number",
+                    "vote_result", "vote_desc", "vote_question"])
+        for n in range(1, 31):
+            w.writerow([119, "Senate", n, f"2025-03-{n % 28 + 1:02d}", f"S{n}",
+                        "Passed", "x" * 50, "On Passage"])
+    with open(d / "S119_votes.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["congress", "chamber", "rollnumber", "icpsr", "cast_code"])
+        for n in range(1, 31):
+            w.writerow([119, "Senate", n, D1, 1])   # Yea
+            w.writerow([119, "Senate", n, D2, 6])   # Nay — the tied dissenter
+            w.writerow([119, "Senate", n, R1, 1])   # unanimous R, Yea
+            w.writerow([119, "Senate", n, R2, 1])
+
+    code, _ = run_script(d, tmp / "otied", tmp / "rtied.txt")
+    assert code == 0
+
+    out = json.loads((tmp / "otied" / "data.json").read_text())
+    members = {m["icpsr"]: m for m in out["members"]}
+
+    d2_dissents = json.loads((tmp / "otied" / "members" / f"{D2}.json").read_text())["dissents"]
+    assert len(d2_dissents) == 30, len(d2_dissents)
+    assert all(dis["kind"] == "partisan" for dis in d2_dissents), \
+        "a tied caucus's dissenter was charged a consensus deviation"
+
+    # Republicans are genuinely unanimous every roll: with the tie correctly
+    # kept partisan, they accrue real partisan votes and score 0% deviation —
+    # not None, which is what they'd get if the roll had been misclassified
+    # consensus (no partisan votes at all -> unscored -> {} group_stats).
+    assert members[R1]["independence_score"] == 0.0, members[R1]["independence_score"]
+    rep = out["summary"]["senate_rep"]
+    assert rep["count"] == 2, rep
+    assert rep["avg_independence"] == 0.0, rep
+
+    # Both Democrats are permanently tied, so neither ever accrues a nonzero
+    # partisan weight and both go out unscored — a populated group with no
+    # score at all. group_stats used to return {} for that, dropping the member
+    # count and attendance into a weekly history snapshot that keeps summaries
+    # only, so they could never be recovered. Count and attendance survive; only
+    # the score statistics are null.
+    dem = out["summary"]["senate_dem"]
+    assert dem["count"] == 2, dem
+    assert dem["avg_independence"] is None, dem
+    assert dem["avg_missed_pct"] == 0.0, dem
+
+
 def main():
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
@@ -377,13 +457,15 @@ def main():
         check_tier_boundaries()
         check_schema_drift(tmp)
         check_chamber_switcher(tmp)
+        check_tied_caucus_consensus(tmp)
 
         # VOTES_CONGRESS pins the fixture's Congress. Without it the script
         # derives one from today's date and this test would start looking for
         # H120_*.csv on 2027-01-03.
         env = {**os.environ, "VOTES_DATA_DIR": str(data_dir),
                "VOTES_OUT_DIR": str(out_dir), "VOTES_OFFLINE": "1",
-               "VOTES_CONGRESS": "119"}
+               "VOTES_CONGRESS": "119",
+               "VOTES_SCHEMA_REPORT": str(out_dir / "schema-drift.txt")}
         subprocess.run([sys.executable, "analyze_votes.py"], cwd=ROOT, env=env, check=True)
 
         data = json.loads((out_dir / "data.json").read_text())

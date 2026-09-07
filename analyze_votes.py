@@ -325,6 +325,14 @@ for ch in ("H", "S"):
                       f"{r['chamber']} {r['rollnumber']!r}")
         if roll is None:
             continue
+        if r["chamber"] not in KNOWN_CHAMBERS:
+            # members and votes both report an unrecognised chamber; this is the
+            # third source of that same string. If only this file renames it,
+            # dissents silently lose their date/bill/question/result — the build
+            # still exits 0 with no drift warning unless this is reported too.
+            note_drift(("rollcalls chamber", r["chamber"]),
+                       f"rollcalls: unrecognised chamber {r['chamber']!r} "
+                       f"(e.g. rollcall {roll}) — dissents lose their bill context")
         rollcalls[(r["chamber"], roll)] = {
             "date": r["date"],
             "bill_number": r["bill_number"],
@@ -383,7 +391,14 @@ for key, parties in tally.items():
         info[f"{p}_weight"] = (counts[pos] / sum(counts.values()) - 0.5) * 2
     if len(info) != 4:
         continue  # a party cast no decisive votes on this rollcall — unclassifiable
-    info["vote_type"] = "consensus" if info["D_pos"] == info["R_pos"] else "partisan"
+    # A tied caucus (weight 0.0) has no real majority, so it can never establish
+    # bipartisan consensus — that would count every dissenter at full consensus
+    # weight against a "majority" that doesn't exist. It still counts as partisan
+    # (at its own zero weight), which is also what tests a clear-majority member
+    # of the other caucus against.
+    tied = info["D_weight"] == 0.0 or info["R_weight"] == 0.0
+    info["vote_type"] = ("partisan" if tied or info["D_pos"] != info["R_pos"]
+                         else "consensus")
     positions[key] = info
 
 # ── Score bands ────────────────────────────────────────────────────────────────
@@ -519,14 +534,18 @@ members = sorted(records, key=lambda r: (r["chamber"], r["party"], r["name"]))
 
 # ── Summary stats ──────────────────────────────────────────────────────────────
 def group_stats(subset):
+    # An empty group (no members at all) is distinct from a populated group where
+    # nobody has a partisan denominator — the latter still has a member count and
+    # attendance to report, and this is archived weekly into summary-only history,
+    # so losing those here loses them for good.
+    if not subset: return {}
     scores = [r["independence_score"] for r in subset if r["independence_score"] is not None]
-    if not scores: return {}
     missed_pcts = [r["missed_pct"] for r in subset if r["missed_pct"] is not None]
     return {
         "count":      len(subset),
-        "avg_independence": round(sum(scores) / len(scores), 2),
-        "min_independence": round(min(scores), 2),
-        "max_independence": round(max(scores), 2),
+        "avg_independence": round(sum(scores) / len(scores), 2) if scores else None,
+        "min_independence": round(min(scores), 2) if scores else None,
+        "max_independence": round(max(scores), 2) if scores else None,
         "avg_missed_pct": round(sum(missed_pcts) / len(missed_pcts), 2) if missed_pcts else None,
         # A list indexed by tier id, not a dict keyed by name: this is archived
         # weekly and must survive a rename of the bands.
@@ -605,6 +624,8 @@ for p in sorted(hist_dir.glob("*.json")):
         continue
     try:
         entry = json.loads(p.read_text())
+        if not isinstance(entry, dict):
+            raise TypeError(f"snapshot is {type(entry).__name__}, not an object")
         if not SNAPSHOT_DATE.match(p.stem) or entry.get("date") != p.stem:
             print(f"! Skipping misnamed snapshot {p.name}")
             note_drift(("snapshot", p.name),
@@ -612,7 +633,7 @@ for p in sorted(hist_dir.glob("*.json")):
                        f"(carries {entry.get('date')!r}) — left out of index.json")
             continue
         history_index.append({"date": p.stem, "congress": entry["congress"]})
-    except (json.JSONDecodeError, KeyError, OSError) as e:
+    except (json.JSONDecodeError, KeyError, OSError, TypeError) as e:
         print(f"! Skipping unreadable snapshot {p.name}: {type(e).__name__}")
         note_drift(("snapshot", p.name), f"history/{p.name} is unreadable "
                                          f"({type(e).__name__}) — left out of index.json")
