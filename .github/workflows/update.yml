@@ -13,6 +13,17 @@ jobs:
       issues: write      # to report upstream schema drift
 
     steps:
+      # First step so it instruments the whole job — contents:write, unattended,
+      # weekly, and the only job in this repo with no egress visibility (F19).
+      # Audit, not block: no captured telemetry for this job yet (analyze_votes.py
+      # hits Voteview, test_browser.mjs drives Chrome — unknown domains today).
+      # Promote to block once a real run's log gives the actual list, the way
+      # sync-upstream.yml did.
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
       # docs/history/ is tracked on main, so the checkout already carries every
       # prior snapshot forward. The script globs that dir to rebuild index.json.
       - name: Checkout
