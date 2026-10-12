@@ -1,0 +1,111 @@
+{
+  "date": "2026-10-05",
+  "congress": 119,
+  "summary": {
+    "all": {
+      "count": 543,
+      "avg_independence": 1.67,
+      "min_independence": 0.0,
+      "max_independence": 30.36,
+      "avg_missed_pct": 3.34,
+      "label_dist": [
+        245,
+        154,
+        91,
+        36,
+        12,
+        5
+      ]
+    },
+    "house": {
+      "count": 441,
+      "avg_independence": 1.67,
+      "min_independence": 0.0,
+      "max_independence": 30.36,
+      "avg_missed_pct": 3.41,
+      "label_dist": [
+        187,
+        141,
+        71,
+        30,
+        7,
+        5
+      ]
+    },
+    "senate": {
+      "count": 102,
+      "avg_independence": 1.7,
+      "min_independence": 0.0,
+      "max_independence": 15.06,
+      "avg_missed_pct": 3.03,
+      "label_dist": [
+        58,
+        13,
+        20,
+        6,
+        5,
+        0
+      ]
+    },
+    "house_dem": {
+      "count": 218,
+      "avg_independence": 2.09,
+      "min_independence": 0.0,
+      "max_independence": 30.36,
+      "avg_missed_pct": 3.41,
+      "label_dist": [
+        100,
+        56,
+        29,
+        23,
+        5,
+        5
+      ]
+    },
+    "house_rep": {
+      "count": 223,
+      "avg_independence": 1.25,
+      "min_independence": 0.0,
+      "max_independence": 19.92,
+      "avg_missed_pct": 3.41,
+      "label_dist": [
+        87,
+        85,
+        42,
+        7,
+        2,
+        0
+      ]
+    },
+    "senate_dem": {
+      "count": 47,
+      "avg_independence": 2.29,
+      "min_independence": 0.0,
+      "max_independence": 14.68,
+      "avg_missed_pct": 3.03,
+      "label_dist": [
+        16,
+        9,
+        14,
+        6,
+        2,
+        0
+      ]
+    },
+    "senate_rep": {
+      "count": 55,
+      "avg_independence": 1.19,
+      "min_independence": 0.0,
+      "max_independence": 15.06,
+      "avg_missed_pct": 3.03,
+      "label_dist": [
+        42,
+        4,
+        6,
+        0,
+        3,
+        0
+      ]
+    }
+  }
+}
