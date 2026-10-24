@@ -24,10 +24,17 @@ jobs:
         with:
           egress-policy: audit
 
-      # docs/history/ is tracked on main, so the checkout already carries every
-      # prior snapshot forward. The script globs that dir to rebuild index.json.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Snapshots live on the `history` branch, not main: main's ruleset requires the
+      # validate check on every push, which an unattended bot commit can never have.
+      # The script globs docs/history/ to rebuild index.json, so put every prior
+      # snapshot back before it runs.
+      - name: Restore history snapshots
+        run: |
+          git fetch --depth=1 origin history
+          git checkout FETCH_HEAD -- docs/history
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -85,18 +92,22 @@ jobs:
           fi
 
       # Snapshots are the one output that cannot be regenerated, so they get
-      # real history on main. Bulk data (data.json, members/) is gitignored.
+      # real history on the `history` branch. Bulk data (data.json, members/) is
+      # gitignored. Committed from a worktree so main's checkout stays untouched.
       - name: Commit history snapshot
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch --depth=1 origin history
+          git worktree add -q --detach hist FETCH_HEAD
+          cp docs/history/*.json hist/docs/history/
+          cd hist
           git add docs/history
           if git diff --staged --quiet; then
             echo "No snapshot change"
           else
-            git commit -m "History snapshot $(date -u '+%Y-%m-%d')"
-            git pull --rebase --autostash
-            git push
+            git commit -q -m "History snapshot $(date -u '+%Y-%m-%d')"
+            git push origin HEAD:history
           fi
 
       # docs/ is the whole published site. Force-pushed as a fresh single commit

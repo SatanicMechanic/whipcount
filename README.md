@@ -94,7 +94,7 @@ git push -u origin main
 - Go to **Actions → Update Voting Index**
 - Click **Run workflow**
 
-After ~30 seconds the built `docs/` tree is force-pushed to the `site` branch and the site is live. The bulk outputs (`data.json`, `members/`) are gitignored on `main` and only ever exist on `site`; the only thing committed back to `main` is `docs/history/`, which cannot be regenerated.
+After ~30 seconds the built `docs/` tree is force-pushed to the `site` branch and the site is live. The bulk outputs (`data.json`, `members/`) are gitignored on `main` and only ever exist on `site`; the only thing committed back is `docs/history/`, which cannot be regenerated. It goes to the `history` branch, not `main`, because `main` requires the `validate` check on every push and an unattended bot commit can't have it.
 
 The Action runs automatically every Monday at 8am UTC thereafter.
 

@@ -613,8 +613,8 @@ today = now.strftime("%Y-%m-%d")
 # build: this runs before the workflow commits, so an unguarded raise here would
 # fail identically every week until someone hand-edited the archive.
 # The date is also the only snapshot field the site renders as text, so it is
-# checked, not trusted: docs/history/ is committed to main, which makes a merged
-# pull request a write path into the published page. A name that is not exactly
+# checked, not trusted: docs/history/ is committed to the history branch, which makes
+# a push there a write path into the published page. A name that is not exactly
 # YYYY-MM-DD, or a file whose own "date" disagrees with its name, is left out.
 SNAPSHOT_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
