@@ -17,9 +17,16 @@ updates:
           - "*"
 
   # GitHub Actions
+  # Grouped so Dependabot opens ONE PR per run. Sibling PRs that both edit
+  # workflows can't auto-merge: after the first merges, GITHUB_TOKEN can't
+  # merge the stale second one (workflow_policy_update_error).
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns:
+          - "*"

@@ -14,19 +14,9 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Fetch Dependabot metadata
-        id: metadata
-        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
-        with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Auto-merge patch and minor updates
-        # dependency-group alone used to qualify regardless of update-type: python-deps
-        # groups every package with no semver restriction, so a grouped major update
-        # was eligible here too. Require the semver type either way.
-        if: |
-          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
-          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+      # Policy: currency over stability. Every Dependabot update, majors included,
+      # merges once the required `validate` check passes. No semver gate on purpose.
+      - name: Enable auto-merge
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}

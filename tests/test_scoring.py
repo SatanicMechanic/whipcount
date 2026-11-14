@@ -509,9 +509,10 @@ def main():
         # A defection on a zero-cohesion vote costs nothing at all.
         assert by_icpsr[10]["party_unity_pct"] == 66.67
         assert by_icpsr[10]["independence_score"] == 0.0
-        # Consensus dissents are unweighted.
+        # Consensus dissents carry min(D, R) cohesion: roll 31 has 4 of 6 Democrats
+        # on Yea (13 is absent), so (4/6 - 0.5) * 2 = 0.3333; Republicans are unanimous.
         d4 = json.loads((out_dir / "members" / "4.json").read_text())["dissents"]
-        assert [d["kind"] for d in d4] == ["consensus"] and d4[0]["weight"] == 1.0
+        assert [d["kind"] for d in d4] == ["consensus"] and d4[0]["weight"] == 0.3333, d4
 
         # ── missed_pct ────────────────────────────────────────────────────────
         # Denominator is every rollcall the chamber held between a member's
@@ -552,7 +553,8 @@ def main():
         assert by_icpsr[1]["independence_tier"] == 0
         assert by_icpsr[9]["independence_score"] == 3.39     # == its weighted partisan
         assert by_icpsr[9]["independence_tier"] == 2      # 3.39 lands in 1.5-4%
-        for i, cons_dev in ((4, 10.0), (5, 20.0)):
+        # Weighted: rolls 31/32 weigh 1/3 and 2/3, the other 8 weigh 1.0 (total 9.0).
+        for i, cons_dev in ((4, 3.7), (5, 11.11)):
             assert by_icpsr[i]["consensus_deviation_pct"] == cons_dev
             assert by_icpsr[i]["independence_score"] == 0.0, by_icpsr[i]
             assert by_icpsr[i]["independence_tier"] == 0
@@ -569,7 +571,9 @@ def main():
         # its meaning through a rename of the bands
         dist = data["summary"]["all"]["label_dist"]
         assert isinstance(dist, list) and len(dist) == len(tiers)
-        assert sum(dist) == data["summary"]["all"]["count"]
+        # 11 has 34 decisive votes but only 24 partisan ones: below the gate, unscored
+        assert by_icpsr[12]["independence_score"] is None  # 30 votes, only 20 partisan: below the gate
+        assert sum(dist) == data["summary"]["all"]["count"] - 1
 
         # ── bill context joined onto dissents ─────────────────────────────────
         assert d4[0]["bill_number"] == "HR31" and d4[0]["vote_result"] == "Passed"

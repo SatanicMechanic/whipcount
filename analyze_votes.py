@@ -399,6 +399,9 @@ for key, parties in tally.items():
     tied = info["D_weight"] == 0.0 or info["R_weight"] == 0.0
     info["vote_type"] = ("partisan" if tied or info["D_pos"] != info["R_pos"]
                          else "consensus")
+    # A bipartisan vote only counts as much as its looser party was united: 51/49 in
+    # both caucuses is barely consensus, so it gets ~0 weight, like the partisan side.
+    info["cons_weight"] = min(info["D_weight"], info["R_weight"])
     positions[key] = info
 
 # ── Score bands ────────────────────────────────────────────────────────────────
@@ -451,14 +454,15 @@ for icpsr, cast in by_member.items():
 
     n_part = n_defect = 0          # unweighted partisan (party_unity_pct, back-compat)
     w_total = w_defect = 0.0       # cohesion-weighted partisan
-    n_cons = n_cons_defect = 0
+    n_cons = 0
+    c_total = c_defect = 0.0       # cohesion-weighted consensus
     dissents = []
 
     for chamber, roll, code in cast:
         info = positions[(chamber, roll)]
         partisan = info["vote_type"] == "partisan"
         pos = info[f"{party}_pos"] if partisan else info["D_pos"]
-        weight = info[f"{party}_weight"] if partisan else 1.0
+        weight = info[f"{party}_weight"] if partisan else info["cons_weight"]
         defected = code != pos
 
         if partisan:
@@ -469,8 +473,9 @@ for icpsr, cast in by_member.items():
                 w_defect += weight
         else:
             n_cons += 1
+            c_total += weight
             if defected:
-                n_cons_defect += 1
+                c_defect += weight
 
         if defected:
             dissents.append({
@@ -489,18 +494,19 @@ for icpsr, cast in by_member.items():
 
     party_unity = 1 - n_defect / n_part if n_part else None
     p_dev = w_defect / w_total if w_total else None
-    c_dev = n_cons_defect / n_cons if n_cons else None
+    c_dev = c_defect / c_total if c_total else None
 
     # The headline score is cohesion-weighted partisan deviation alone. It used to be
     # the mean of that and consensus deviation, but the two are not the same behavior
-    # and do not share a scale: consensus deviation runs ~6x larger (median 3.5% vs
+    # and do not share a scale: consensus deviation runs ~6x larger unweighted, ~2x weighted (median 3.5% / 1.3% vs
     # 0.6%), so the mean tracked it at r=0.96 and the party-discipline signal — the
     # actual subject of the site — contributed almost nothing. Consensus deviation is
     # published beside the score instead of blended into it.
     # No fallback to c_dev when a member has no partisan votes: scoring them on the
     # other scale is the same mix in miniature, and 30 consensus-only votes is a
     # reachable way to clear MIN_VOTES. They go out unscored; the site renders that.
-    ind = p_dev
+    # Gate on partisan votes, the score's actual denominator, not on all classified votes.
+    ind = p_dev if n_part >= MIN_VOTES else None
 
     dissents.sort(key=lambda d: d.get("date", ""), reverse=True)
     dissents_by_member[icpsr] = dissents
